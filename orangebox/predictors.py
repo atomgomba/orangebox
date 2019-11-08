@@ -1,0 +1,81 @@
+# Orangebox - Cleanflight/Betaflight blackbox data parser.
+# Copyright (C) 2019  Károly Kiripolszky
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+from typing import Dict
+
+from .context import Context
+from .tools import map_to
+from .types import FrameType, Number, Predictor
+
+predictor_map = dict()  # type: Dict[int, Predictor]
+
+
+# noinspection PyUnusedLocal
+@map_to(0, predictor_map)
+def _noop(new: Number, ctx: Context) -> Number:
+    return new
+
+
+@map_to(1, predictor_map)
+def _previous(new: Number, ctx: Context) -> Number:
+    return new + ctx.get_past_value(0)
+
+
+@map_to(2, predictor_map)
+def _straight_line(new: Number, ctx: Context) -> Number:
+    prev = ctx.get_past_value(0)
+    prev2 = ctx.get_past_value(1, prev)
+    return new + 2 * prev - prev2
+
+
+@map_to(3, predictor_map)
+def _average2(new: Number, ctx: Context) -> Number:
+    prev = ctx.get_past_value(0)
+    prev2 = ctx.get_past_value(1, prev)
+    return new + int((prev + prev2) / 2)
+
+
+@map_to(4, predictor_map)
+def _minthrottle(new: Number, ctx: Context) -> Number:
+    return new + ctx.headers.get("minthrottle", 0)
+
+
+@map_to(5, predictor_map)
+def _motor0(new: Number, ctx: Context) -> Number:
+    return new + ctx.get_current_value_by_name(FrameType.INTRA, "motor[0]")
+
+
+# noinspection PyUnusedLocal
+@map_to(6, predictor_map)
+def _increment(new: Number, ctx: Context) -> Number:
+    return 1 + ctx.get_past_value(0) + ctx.count_skipped_frames()
+
+
+# noinspection PyUnusedLocal
+@map_to(8, predictor_map)
+def _1500(new: Number, ctx: Context) -> Number:
+    return new + 1500
+
+
+@map_to(9, predictor_map)
+def _vbatref(new: Number, ctx: Context) -> Number:
+    return new + ctx.headers.get("vbatref", 0)
+
+
+@map_to(11, predictor_map)
+def _minmotor(new: Number, ctx: Context) -> Number:
+    # index 0 is the minimum motor output
+    return new + ctx.headers.get("motorOutput", [0])[0]

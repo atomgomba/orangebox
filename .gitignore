@@ -1,0 +1,10 @@
+/.idea
+/env
+/.vscode
+*.pyc
+__pycache__
+*.[lL][oO][gG]
+*.[bB][fF][lL]
+*.[cC][fF][lL]
+*.csv*
+*.event
