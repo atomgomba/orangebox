@@ -64,6 +64,10 @@ python3 parser_benchmark.py ~/logs/LOG00042.BFL
 
 ## Changelog
 
+### 0.1.1-beta
+
+* Add `bb2csv` command-line script for converting logs into CSV
+
 ### 0.1.0-beta
 
 * First release (with a lot of missing parts)

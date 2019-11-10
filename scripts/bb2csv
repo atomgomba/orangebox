@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+# Orangebox - Cleanflight/Betaflight blackbox data parser.
+# Copyright (C) 2019  Károly Kiripolszky
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import csv
+import logging
+import sys
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+
+from orangebox import Parser
+
+
+def main(args):
+    output = open(args.output, "w") if args.output is not None else sys.stdout
+    parser = Parser.load(args.path)
+    with output as f:
+        writer = csv.writer(f)
+        writer.writerow(parser.field_names)
+        for frame in parser.frames():
+            writer.writerow(frame.data)
+
+
+if __name__ == "__main__":
+    argparser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+    argparser.add_argument("path", help="Path to a blackbox log file")
+    argparser.add_argument("-o", "--output", default=None,
+                           help="Optional path to an output file (otherwise use standard output)")
+    argparser.add_argument("-v", dest="verbosity", action="count", default=0,
+                           help="Control verbosity (can be used multiple times)")
+
+    args = argparser.parse_args()
+
+    levels = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
+    if args.verbosity >= len(levels):
+        raise IndexError("Verbosity must be 0 <= n < 4")
+    logging.basicConfig(level=levels[args.verbosity],
+                        format='%(asctime)s %(name)s %(levelname)s %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S')
+
+    main(args)

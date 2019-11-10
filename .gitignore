@@ -8,3 +8,6 @@ __pycache__
 *.[cC][fF][lL]
 *.csv*
 *.event
+/build
+/dist
+*.egg-info
