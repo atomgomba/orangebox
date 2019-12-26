@@ -7,7 +7,7 @@ setup(
     name="orangebox",
     version=orangebox.__version__,
     packages=["orangebox"],
-    scripts=["scripts/bb2csv"],
+    scripts=["scripts/bb2csv", "scripts/bbsplit"],
     author="Károly Kiripolszky",
     author_email="karcsi@ekezet.com",
     description="A Cleanflight/Betaflight blackbox log parser written in Python 3",
