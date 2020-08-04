@@ -6,6 +6,8 @@
 __pycache__
 *.[lL][oO][gG]
 *.[bB][fF][lL]
+*.[bB][bB][lL]
+*.[gG][pP][xX]
 *.[cC][fF][lL]
 *.csv*
 *.event
