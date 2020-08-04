@@ -34,6 +34,7 @@ def main(args):
 
 
 if __name__ == "__main__":
+    # noinspection PyTypeChecker
     argparser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     argparser.add_argument("path", help="Path to a blackbox log file")
     argparser.add_argument("-o", "--output", default=None,
