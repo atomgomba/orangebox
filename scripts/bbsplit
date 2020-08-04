@@ -15,45 +15,44 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import os
 import logging
+import os
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
-from pathlib import Path
+from typing import Optional
 
-def main(args):
+from orangebox import Parser as LogParser
 
-    with open(args.path, 'rb') as f:
-        content = f.read()
 
-    # The first line of the overall BBL file re-appears at the beginning of each recorded session.
-    try:
-        first_newline_index = content.index(str('\n').encode('utf8'))
-    except ValueError as e:
-        raise ValueError('No newline in %dB of log data from %r.' % (len(content), fpath), e)
-    firstline = content[:first_newline_index + 1]
-    parts = content.split(firstline)
-    print(len(parts))
+def main(path: str, output_path: Optional[str]):
+    if not LogParser.load(path).headers:
+        raise RuntimeError("Invalid blackbox log file")
 
-    os.makedirs(args.output, exist_ok = True)
+    with open(path, 'rb') as f:
+        # The first line of the overall BBL file re-appears at the beginning of each recorded session.
+        first_line = f.readline()
+        parts = f.read().split(first_line)
 
-    for i in range(1,len(parts)):
-        name, ext = os.path.splitext(os.path.basename(args.path))
-        out_path = os.path.join(args.output, '%s.%d%s' % (name, i, ext))
-        with open(out_path, 'wb') as newfile:
-            newfile.write(firstline+parts[i])
+    output_path = output_path or os.path.abspath(os.path.dirname(path))
+    os.makedirs(output_path, exist_ok=True)
+
+    name, ext = os.path.splitext(os.path.basename(path))
+    for i, part in enumerate(parts):
+        new_filename = "{}.{:d}{}".format(name, i + 1, ext)
+        new_path = os.path.join(output_path, new_filename)
+        with open(new_path, 'wb') as new_file:
+            new_file.write(first_line + part)
+
 
 if __name__ == "__main__":
+    # noinspection PyTypeChecker
     argparser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     argparser.add_argument("path", help="Path to a blackbox log file")
-    argparser.add_argument("-o", "--output", default=None, help="Optional path to output directory, defaults to parent directory of the original log file")
+    argparser.add_argument("-o", "--output", metavar="DIR", default=None,
+                           help="Optional path to output directory, defaults to parent directory of the original log file")
     argparser.add_argument("-v", dest="verbosity", action="count", default=0,
                            help="Control verbosity (can be used multiple times)")
 
     args = argparser.parse_args()
-
-    if args.output is None:
-        args.output = Path(args.path).parent
-    print(args.output)
 
     levels = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
     if args.verbosity >= len(levels):
@@ -62,4 +61,4 @@ if __name__ == "__main__":
                         format='%(asctime)s %(name)s %(levelname)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    main(args)
+    main(args.path, args.output)

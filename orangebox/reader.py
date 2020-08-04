@@ -137,5 +137,8 @@ class Reader:
                                 decoder = decoder(headers.get("Data version"))
                             field_defs[frametype][i].decoderfun = decoder
         # copy field names from INTRA to INTER defs
+        if FrameType.INTER not in field_defs:
+            # partial header information
+            return
         for i, fdef in enumerate(field_defs[FrameType.INTER]):
             fdef.name = field_defs[FrameType.INTRA][i].name
