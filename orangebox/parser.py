@@ -161,16 +161,14 @@ class Parser:
         return Frame(ctx.frame_type, result)
 
     def _parse_event(self, reader: Reader) -> bool:
-        events = event_map
         byte = next(reader)
-        ctx = self._ctx
         try:
             event_type = EventType(byte)
         except ValueError:
             _log.warning("Unknown event type: {!r}".format(byte))
             return False
-        _log.debug("New Event Frame #{:d}: {:s}".format(ctx.read_frame_count + 1, event_type.name))
-        parser = events[event_type]  # type: EventParser
+        _log.debug("New event frame #{:d}: {:s}".format(self._ctx.read_frame_count + 1, event_type.name))
+        parser = event_map[event_type]  # type: EventParser
         event_data = parser(reader)
         self.events.append(Event(event_type, event_data))
         if event_type == EventType.LOG_END:
@@ -180,11 +178,3 @@ class Parser:
     @property
     def reader(self) -> Reader:
         return self._reader
-
-    @property
-    def context(self) -> Context:
-        return self._ctx
-
-    @property
-    def last_event(self) -> Optional[Event]:
-        return None if not self.events else self.events[-1]
