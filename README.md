@@ -1,10 +1,10 @@
 # Orangebox
 
-A Cleanflight/Betaflight blackbox log parser written in Python 3.
+A Cleanflight/Betaflight blackbox log parser written in Python 3. 
 
-Orangebox has no dependencies other than the Python standard library, although it might be worthy to investigate
-how using `numpy` could possibly bring some performance gain in the future. If so, it shouldn't be a usability barrier
-since any user wanting to make something out of the decoded data will more than likely have `numpy` installed
+Orangebox has no dependencies other than the Python standard library, although it might be worthy to investigate 
+how using `numpy` could possibly bring some performance gain in the future. If so, it shouldn't be a usability barrier 
+since any user wanting to make something out of the decoded data will more than likely have `numpy` installed 
 transitively as well as it's also a dependency of libraries like `matplotlib` and `pandas` (among others).
 
 This parser was roughly modeled after the one in [Blackbox Log Viewer](https://github.com/betaflight/blackbox-log-viewer) hence produces the same output.
@@ -14,24 +14,28 @@ This parser was roughly modeled after the one in [Blackbox Log Viewer](https://g
 ```python3
 from orangebox import Parser
 
-# Load a file and select the first log (default)
-parser = Parser.load("LOG00042.BFL", 1)
+# Load a file
+parser = Parser.load("btfl_all.bbl")
+# or optionally select a log by index (1 is the default)
+# parser = Parser.load("btfl_all.bbl", 1)
 
 # Print headers
-print(parser.headers)
+print("headers:", parser.headers)
 
 # Print the names of fields
-print(parser.field_names)
+print("field names:", parser.field_names)
 
 # Select a specific log within the file by index
+print("log count:", parser.reader.log_count)
 parser.set_log_index(2)
 
 # Print field values frame by frame
 for frame in parser.frames():
-    print(frame.data)
+    print("first frame:", frame.data)
+    break
 
 # Complete list of events only available once all frames have been parsed
-print(parser.events)
+print("events:", parser.events)
 ```
 
 ## Scripts
