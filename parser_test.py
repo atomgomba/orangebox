@@ -37,23 +37,26 @@ def compare(frame_index, parser, frame, csv_frame, show_all_fields):
         print("  # of mismatches: {:d}".format(mismatched_num))
 
 
-def main(args):
-    parser = Parser.load(args.path)
+def main(path: str, csv_path: str, show_all_fields: bool, log_index: int):
+    parser = Parser.load(path, log_index=log_index)
     csv_frames = []
-    for i, row in enumerate(csv.reader(open(args.csv_path))):
+    for i, row in enumerate(csv.reader(open(csv_path))):
         if len(row) == 2:
             # skip log headers
             continue
         csv_frames.append(row)
     for i, frame in enumerate(parser.frames()):
         # add i + 1 to skip field headers in CSV
-        compare(frame.data[0], parser, frame, csv_frames[i + 1], args.show_all_fields)
+        compare(frame.data[0], parser, frame, csv_frames[i + 1], show_all_fields)
 
 
 if __name__ == "__main__":
+    # noinspection PyTypeChecker
     argparser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     argparser.add_argument("path", help="Path to a .BFL file")
     argparser.add_argument("csv_path", help="Path to a .CSV file for verification")
+    argparser.add_argument("-i", "--index", type=int, dest="log_index", default=1,
+                           help="Log index number (In case of merged input)")
     argparser.add_argument("-a", "--show-all-fields", action="store_true",
                            help="Show all fields of differing frames")
     argparser.add_argument("-v", dest="verbosity", action="count", default=0,
@@ -68,4 +71,4 @@ if __name__ == "__main__":
                         format='%(asctime)s %(name)s %(levelname)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    main(args)
+    main(args.path, args.csv_path, args.show_all_fields, args.log_index)

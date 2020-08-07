@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
-from typing import Dict, Iterator, List, Optional, Union
+from typing import BinaryIO, Dict, Iterator, List, Optional, Union
 
 from .decoders import decoder_map
 from .predictors import predictor_map
@@ -46,27 +46,59 @@ class Reader:
     TODO: detecting and informing the user about possible file corruption (missing headers, etc.)
     """
 
-    def __init__(self, path: str):
+    def __init__(self, path: str, log_index: int = 1):
         self.headers = dict()  # type: Headers
         self.field_defs = dict()  # type: Dict[FrameType, List[FieldDef]]
         self._path = path
         self._frame_data_ptr = 0
-        byteptr = 0
+        self._log_indices = []  # type: List[int]
+        if log_index < 1:
+            msg = "log_index < 1"
+            _log.error(msg)
+            raise RuntimeError(msg)
+        self._log_index = log_index
         with open(path, "rb") as f:
-            while True:
-                f.seek(byteptr)
-                data = f.readline()
-                if not data:
-                    # nothing left to read
-                    break
-                numbytes = self._read_header_line(data)
-                if numbytes is None:
-                    _log.debug("End of headers at {:d}".format(byteptr))
-                    self._frame_data = data + f.read()  # type: bytes
-                    self._frame_data_len = len(self._frame_data)  # type: int
-                    break
-                byteptr += numbytes + 1
+            if not f.seekable():
+                msg = "Input file must be seekable"
+                _log.critical(msg)
+                raise IOError(msg)
+            self._parse_headers(f)
+        # self._log_indices available here
+        num_indices = len(self._log_indices)
+        if num_indices < log_index:
+            raise RuntimeError("Invalid log_index={:d} (max: {:d})".format(log_index, num_indices))
+        _log.info("Log index #{:d} out of {:d}".format(self._log_index, num_indices))
         self._build_field_defs()
+
+    def _parse_headers(self, f: BinaryIO):
+        byteptr = 0
+        is_first_line_read = False
+        while True:
+            f.seek(byteptr)
+            line = f.readline()
+            if not line:
+                # nothing left to read
+                break
+            has_next = self._parse_header_line(line)  # type: int
+            if not has_next:
+                _log.debug("End of headers at {:d}".format(byteptr))
+                self._frame_data = line + f.read()  # type: bytes
+                self._frame_data_len = len(self._frame_data)  # type: int
+                break
+            elif not is_first_line_read:
+                self._build_log_indices(f, line)
+                byteptr = self._log_indices[self._log_index - 1]
+                is_first_line_read = True
+                continue
+            byteptr += len(line)
+
+    def _build_log_indices(self, f: BinaryIO, first_line: bytes):
+        f.seek(0)
+        content = f.read()
+        new_index = content.find(first_line)
+        while -1 < new_index:
+            self._log_indices.append(new_index)
+            new_index = content.find(first_line, new_index + 1)
 
     def tell(self) -> int:
         return self._frame_data_ptr
@@ -93,15 +125,19 @@ class Reader:
     def __len__(self) -> int:
         return self._frame_data_len
 
-    def _read_header_line(self, data: bytes) -> Optional[int]:
+    def _parse_header_line(self, data: bytes) -> bool:
+        """Parse a header line and return its resulting character length.
+
+        Return None if the line cannot be parsed.
+        """
         if data[0] != 72:  # 72 == ord('H')
             # not a header line
-            return None
+            return False
         line = data.decode().replace("H ", "", 1)
         name, value = line.split(':', 1)
         self.headers[name.strip()] = [_trycast(s.strip()) for s in value.split(',')] if ',' in value \
             else _trycast(value.strip())
-        return len(data) - 1
+        return True
 
     def _build_field_defs(self):
         """Use the read headers to populate the `field_defs` property.
@@ -110,35 +146,39 @@ class Reader:
         field_defs = self.field_defs
         predictors = predictor_map
         decoders = decoder_map
-        for frametype in FrameType:
+        for frame_type in FrameType:
             # field header format: 'Field <FrameType> <Property>'
             for header_key, header_value in headers.items():
-                if "Field " + frametype.value not in header_key:
+                if "Field " + frame_type.value not in header_key:
                     # skip headers unrelated to defining fields
                     continue
-                if frametype not in field_defs:
-                    field_defs[frametype] = [FieldDef(frametype) for _ in range(len(header_value))]
+                if frame_type not in field_defs:
+                    field_defs[frame_type] = [FieldDef(frame_type) for _ in range(len(header_value))]
                 prop = header_key.split(" ", 2)[-1]
-                for i, framedefval in enumerate(header_value):
-                    field_defs[frametype][i].__dict__[prop] = framedefval
+                for i, framedef_value in enumerate(header_value):
+                    field_defs[frame_type][i].__dict__[prop] = framedef_value
                     if prop == "predictor":
-                        if framedefval not in predictors:
-                            raise RuntimeError("No predictor found for {:d}".format(framedefval))
+                        if framedef_value not in predictors:
+                            raise RuntimeError("No predictor found for {:d}".format(framedef_value))
                         else:
-                            field_defs[frametype][i].predictorfun = predictors[framedefval]
+                            field_defs[frame_type][i].predictorfun = predictors[framedef_value]
                     elif prop == "encoding":
-                        if framedefval not in decoders:
-                            raise RuntimeError("No decoder found for {:d}".format(framedefval))
+                        if framedef_value not in decoders:
+                            raise RuntimeError("No decoder found for {:d}".format(framedef_value))
                         else:
-                            decoder = decoders[framedefval]
+                            decoder = decoders[framedef_value]
                             if decoder.__name__.endswith("_versioned"):
                                 # short circuit calls to versioned decoders
                                 # noinspection PyArgumentList
                                 decoder = decoder(headers.get("Data version"))
-                            field_defs[frametype][i].decoderfun = decoder
+                            field_defs[frame_type][i].decoderfun = decoder
         # copy field names from INTRA to INTER defs
         if FrameType.INTER not in field_defs:
             # partial header information
             return
         for i, fdef in enumerate(field_defs[FrameType.INTER]):
             fdef.name = field_defs[FrameType.INTRA][i].name
+
+    @property
+    def log_count(self) -> int:
+        return len(self._log_indices)
