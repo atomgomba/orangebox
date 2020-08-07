@@ -32,7 +32,7 @@ def compare(frame_index, parser, frame, csv_frame, show_all_fields):
             i, fdef.name, str(csv_value), str(value), fdef.encoding, fdef.predictor
         ))
     if 0 < mismatched_num:
-        print("Frame {} #{:d} ends at {:d}".format(frame.type.value, frame_index, parser.reader.tell()))
+        print("Frame {} #{:d} ends at {:d}".format(frame.type.value, frame_index + 1, parser.reader.tell()))
         print("\n".join(stats))
         print("  # of mismatches: {:d}".format(mismatched_num))
 
