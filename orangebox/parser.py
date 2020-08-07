@@ -35,15 +35,28 @@ class Parser:
     """
 
     def __init__(self, reader: Reader):
-        self.headers = {k: v for k, v in reader.headers.items() if "Field" not in k}  # type: Headers
+        self.events = []  # type: List[Event]
+        self.headers = {}  # type: Headers
+        self._reader = reader
+        self._end_of_log = False
+        self._ctx = None  # type: Optional[Context]
         self.field_names = []
         for fdef in reader.field_defs.values():
             self.field_names += filter(lambda x: x is not None and x not in self.field_names,
                                        map(lambda x: x.name, fdef))
-        self.events = []  # type: List[Event]
-        self._reader = reader
+        self.set_log_index(reader.log_index)
+
+    def set_log_index(self, index: int):
+        reader = self._reader
+        reader.set_log_index(index)
+        self.events = []
+        self.headers = {k: v for k, v in reader.headers.items() if "Field" not in k}
         self._end_of_log = False
         self._ctx = Context(self.headers, reader.field_defs)
+
+    @staticmethod
+    def load(path: str, log_index: int = 1) -> "Parser":
+        return Parser(Reader(path, log_index))
 
     def frames(self) -> Iterator[Frame]:
         field_defs = self._reader.field_defs
@@ -122,25 +135,6 @@ class Parser:
             ctx.add_frame(frame)
             yield frame
 
-    @staticmethod
-    def load(path: str, log_index: int = 1) -> "Parser":
-        return Parser(Reader(path, log_index))
-
-    def set_log_index(self, index: int):
-        self.reader.log_index = index
-
-    @property
-    def reader(self) -> Reader:
-        return self._reader
-
-    @property
-    def context(self) -> Context:
-        return self._ctx
-
-    @property
-    def last_event(self) -> Optional[Event]:
-        return None if not self.events else self.events[-1]
-
     def _parse_frame(self, fdefs: List[FieldDef], reader: Reader) -> Frame:
         result = ()
         ctx = self._ctx
@@ -182,3 +176,15 @@ class Parser:
         if event_type == EventType.LOG_END:
             self._end_of_log = True
         return True
+
+    @property
+    def reader(self) -> Reader:
+        return self._reader
+
+    @property
+    def context(self) -> Context:
+        return self._ctx
+
+    @property
+    def last_event(self) -> Optional[Event]:
+        return None if not self.events else self.events[-1]
