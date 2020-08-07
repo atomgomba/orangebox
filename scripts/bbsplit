@@ -36,11 +36,13 @@ def main(path: str, output_path: Optional[str]):
     name, ext = os.path.splitext(os.path.basename(path))
     with open(path, "rb") as orig_file:
         for i, ptr in enumerate(reader.log_pointers):
+            log_starts_at = reader.log_pointers[i]
+            logging.debug("Log #{:d} starts at {:d}".format(i + 1, log_starts_at))
             new_filename = "{}.{:d}{}".format(name, i + 1, ext)
-            orig_file.seek(reader.log_pointers[i])
-            size = reader.log_pointers[i + 1] if i < reader.log_count - 1 else None
-            new_data = orig_file.read(size) if size is not None else orig_file.read()
             new_path = os.path.join(output_path, new_filename)
+            size = reader.log_pointers[i + 1] - log_starts_at if i < reader.log_count - 1 else None
+            orig_file.seek(log_starts_at)
+            new_data = orig_file.read(size) if size is not None else orig_file.read()
             with open(new_path, 'wb') as new_file:
                 new_file.write(new_data)
             logging.info("Written: {:s} (size: {:d})".format(new_path, len(new_data)))
