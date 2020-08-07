@@ -20,27 +20,30 @@ import os
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from typing import Optional
 
-from orangebox import Parser as LogParser
+from orangebox.reader import Reader
 
 
 def main(path: str, output_path: Optional[str]):
-    if not LogParser.load(path).headers:
+    reader = Reader(path)
+    if not reader.headers:
         raise RuntimeError("Invalid blackbox log file")
 
-    with open(path, 'rb') as f:
-        # The first line of the overall BBL file re-appears at the beginning of each recorded session.
-        first_line = f.readline()
-        parts = f.read().split(first_line)
+    logging.debug("Found {:d} logs".format(reader.log_count))
 
     output_path = output_path or os.path.abspath(os.path.dirname(path))
     os.makedirs(output_path, exist_ok=True)
 
     name, ext = os.path.splitext(os.path.basename(path))
-    for i, part in enumerate(parts):
-        new_filename = "{}.{:d}{}".format(name, i + 1, ext)
-        new_path = os.path.join(output_path, new_filename)
-        with open(new_path, 'wb') as new_file:
-            new_file.write(first_line + part)
+    with open(path, "rb") as orig_file:
+        for i, ptr in enumerate(reader.log_pointers):
+            new_filename = "{}.{:d}{}".format(name, i + 1, ext)
+            orig_file.seek(reader.log_pointers[i])
+            size = reader.log_pointers[i + 1] if i < reader.log_count - 1 else None
+            new_data = orig_file.read(size) if size is not None else orig_file.read()
+            new_path = os.path.join(output_path, new_filename)
+            with open(new_path, 'wb') as new_file:
+                new_file.write(new_data)
+            logging.info("Written: {:s} (size: {:d})".format(new_path, len(new_data)))
 
 
 if __name__ == "__main__":

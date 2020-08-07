@@ -196,3 +196,7 @@ class Reader:
     @property
     def log_count(self) -> int:
         return len(self._log_pointers)
+
+    @property
+    def log_pointers(self) -> List[int]:
+        return self._log_pointers
