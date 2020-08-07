@@ -70,20 +70,19 @@ class Reader:
     def _parse_headers(self, f: BinaryIO) -> bytes:
         byteptr = 0
         first_line = ""
-        self._header_size = 0
         while True:
             f.seek(byteptr)
             line = f.readline()
             if not line:
                 # nothing left to read
                 break
-            self._header_size += len(line)
-            has_next = self._parse_header_line(line)  # type: int
-            if not has_next:
-                _log.debug("End of headers at {:d} (found: {:d})".format(byteptr, len(self.headers.keys())))
-                break
             if not first_line:
                 first_line = line
+            has_next = self._parse_header_line(line)  # type: int
+            if not has_next:
+                self._header_size = byteptr
+                _log.debug("End of headers at {:d} (found: {:d})".format(byteptr, len(self.headers.keys())))
+                break
             byteptr += len(line)
         return first_line
 
@@ -107,7 +106,7 @@ class Reader:
         start = self._log_pointers[index - 1]
         with open(self._path, "rb") as f:
             f.seek(start + self._header_size)
-            size = self._log_pointers[index] - start if index < self.log_count else None
+            size = self._log_pointers[index] - start - self._header_size if index < self.log_count else None
             self._frame_data = f.read(size) if size is not None else f.read()
         self._log_index = index
         self._frame_data_ptr = 0
