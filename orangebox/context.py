@@ -100,5 +100,5 @@ class Context:
             "total": self.read_frame_count,
             "parsed": self.frame_count,
             "invalid": self.invalid_frame_count,
-            "invalid_percent": self.invalid_frame_count / self.frame_count * 100,
+            "invalid_percent": self.invalid_frame_count / self.read_frame_count * 100 if 0 < self.read_frame_count else 0,
         }
