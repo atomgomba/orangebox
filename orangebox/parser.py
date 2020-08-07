@@ -61,7 +61,6 @@ class Parser:
                 if not last_frame_is_corrupt:
                     reader.seek(last_frame_pos + 1)
                     ctx.invalid_frame_count += 1
-                    ctx.read_frame_count += 1
                 last_frame_is_corrupt = True
                 continue
             last_frame_is_corrupt = False
@@ -74,12 +73,18 @@ class Parser:
                 ctx.read_frame_count += 1
                 if self._end_of_log:
                     _log.info(
-                        "Frames: total: {total:d}, parsed: {parsed:d}, invalid: {invalid:d} ({invalid_percent:.2f}%)"
+                        "Frames: total: {total:d}, parsed: {parsed:d}, skipped: {skipped:d} invalid: {invalid:d} ({invalid_percent:.2f}%)"
                         .format(**ctx.stats))
                     break
                 continue
+            if ftype not in field_defs:
+                _log.warning("No field def found for frame type {!r}".format(ftype))
+                ctx.invalid_frame_count += 1
+                ctx.read_frame_count += 1
+                continue
             # decode frame
             frame = self._parse_frame(field_defs[ftype], reader)
+
             if ftype == FrameType.SLOW:
                 # store this frame to append it to the subsequent non-SLOW frame
                 last_slow = frame
@@ -120,6 +125,9 @@ class Parser:
     @staticmethod
     def load(path: str, log_index: int = 1) -> "Parser":
         return Parser(Reader(path, log_index))
+
+    def set_log_index(self, index: int):
+        self.reader.log_index = index
 
     @property
     def reader(self) -> Reader:

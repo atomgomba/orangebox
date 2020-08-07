@@ -46,59 +46,73 @@ class Reader:
     TODO: detecting and informing the user about possible file corruption (missing headers, etc.)
     """
 
-    def __init__(self, path: str, log_index: int = 1):
+    def __init__(self, path: str, log_index: Optional[int] = None):
         self.headers = dict()  # type: Headers
         self.field_defs = dict()  # type: Dict[FrameType, List[FieldDef]]
+        self._log_index = log_index or 1
+        self._header_size = 0
         self._path = path
         self._frame_data_ptr = 0
-        self._log_indices = []  # type: List[int]
-        if log_index < 1:
-            msg = "log_index < 1"
-            _log.error(msg)
-            raise RuntimeError(msg)
-        self._log_index = log_index
+        self._log_pointers = []  # type: List[int]
+        self._frame_data = b''
+        self._frame_data_len = 0
         with open(path, "rb") as f:
             if not f.seekable():
                 msg = "Input file must be seekable"
                 _log.critical(msg)
                 raise IOError(msg)
-            self._parse_headers(f)
-        # self._log_indices available here
-        num_indices = len(self._log_indices)
-        if num_indices < log_index:
-            raise RuntimeError("Invalid log_index={:d} (max: {:d})".format(log_index, num_indices))
-        _log.info("Log index #{:d} out of {:d}".format(self._log_index, num_indices))
+            first_line = self._parse_headers(f)
+            self._find_pointers(f, first_line)
+        if log_index is not None:
+            self.log_index = log_index
         self._build_field_defs()
 
-    def _parse_headers(self, f: BinaryIO):
+    def _parse_headers(self, f: BinaryIO) -> bytes:
         byteptr = 0
-        is_first_line_read = False
+        first_line = ""
+        self._header_size = 0
         while True:
             f.seek(byteptr)
             line = f.readline()
             if not line:
                 # nothing left to read
                 break
+            self._header_size += len(line)
             has_next = self._parse_header_line(line)  # type: int
             if not has_next:
-                _log.debug("End of headers at {:d}".format(byteptr))
-                self._frame_data = line + f.read()  # type: bytes
-                self._frame_data_len = len(self._frame_data)  # type: int
+                _log.debug("End of headers at {:d} (found: {:d})".format(byteptr, len(self.headers.keys())))
                 break
-            elif not is_first_line_read:
-                self._build_log_indices(f, line)
-                byteptr = self._log_indices[self._log_index - 1]
-                is_first_line_read = True
-                continue
+            if not first_line:
+                first_line = line
             byteptr += len(line)
+        return first_line
 
-    def _build_log_indices(self, f: BinaryIO, first_line: bytes):
+    def _find_pointers(self, f: BinaryIO, first_line: bytes):
         f.seek(0)
         content = f.read()
         new_index = content.find(first_line)
+        step = len(first_line)
         while -1 < new_index:
-            self._log_indices.append(new_index)
-            new_index = content.find(first_line, new_index + 1)
+            self._log_pointers.append(new_index)
+            new_index = content.find(first_line, new_index + step + 1)
+
+    @property
+    def log_index(self) -> int:
+        return self._log_index
+
+    @log_index.setter
+    def log_index(self, index: int):
+        if index < 1 or self.log_count < index:
+            raise RuntimeError("Invalid log_index: {:d} (1 <= x < {:d})".format(index, self.log_count))
+        start = self._log_pointers[index - 1]
+        with open(self._path, "rb") as f:
+            f.seek(start + self._header_size)
+            size = self._log_pointers[index] - start if index < self.log_count else None
+            self._frame_data = f.read(size) if size is not None else f.read()
+        self._log_index = index
+        self._frame_data_ptr = 0
+        self._frame_data_len = len(self._frame_data)
+        _log.info("Log index #{:d} out of {:d} (starts at: {:d})".format(self._log_index, self.log_count, start))
 
     def tell(self) -> int:
         return self._frame_data_ptr
@@ -181,4 +195,4 @@ class Reader:
 
     @property
     def log_count(self) -> int:
-        return len(self._log_indices)
+        return len(self._log_pointers)
