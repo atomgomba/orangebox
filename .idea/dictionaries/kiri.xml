@@ -4,13 +4,23 @@
       <w>argparser</w>
       <w>asctime</w>
       <w>betaflight</w>
+      <w>byteptr</w>
       <w>cleanflight</w>
+      <w>defs</w>
+      <w>desync</w>
+      <w>fdef</w>
+      <w>fdefs</w>
       <w>firstline</w>
+      <w>framedef</w>
+      <w>ftype</w>
       <w>levelname</w>
       <w>newfile</w>
+      <w>numbytes</w>
       <w>orangebox</w>
       <w>plasmatree</w>
+      <w>rawvalue</w>
       <w>soldak</w>
+      <w>trycast</w>
     </words>
   </dictionary>
 </component>
