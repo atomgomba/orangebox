@@ -69,7 +69,8 @@ class Parser:
             ctx.frame_type = ftype
             if ftype == FrameType.EVENT:
                 # parse event frame
-                self._parse_event(reader)
+                if not self._parse_event(reader):
+                    ctx.invalid_frame_count += 1
                 ctx.read_frame_count += 1
                 if self._end_of_log:
                     _log.info(
@@ -110,14 +111,15 @@ class Parser:
             except ValueError:
                 _log.debug("Dropping {:s} Frame #{:d} because it's corrupt"
                            .format(ftype.value, ctx.read_frame_count + 1))
+                ctx.invalid_frame_count += 1
                 continue
             ctx.read_frame_count += 1
             ctx.add_frame(frame)
             yield frame
 
     @staticmethod
-    def load(path: str) -> "Parser":
-        return Parser(Reader(path))
+    def load(path: str, log_index: int = 1) -> "Parser":
+        return Parser(Reader(path, log_index))
 
     @property
     def reader(self) -> Reader:
@@ -156,19 +158,19 @@ class Parser:
                 result += (value,)
         return Frame(ctx.frame_type, result)
 
-    def _parse_event(self, reader: Reader):
+    def _parse_event(self, reader: Reader) -> bool:
         events = event_map
         byte = next(reader)
         ctx = self._ctx
         try:
             event_type = EventType(byte)
         except ValueError:
-            _log.debug("Unknown event type: '{:d}'".format(byte))
-            return None
+            _log.warning("Unknown event type: {!r}".format(byte))
+            return False
         _log.debug("New Event Frame #{:d}: {:s}".format(ctx.read_frame_count + 1, event_type.name))
         parser = events[event_type]  # type: EventParser
         event_data = parser(reader)
         self.events.append(Event(event_type, event_data))
         if event_type == EventType.LOG_END:
             self._end_of_log = True
-            return
+        return True
