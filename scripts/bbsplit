@@ -23,29 +23,36 @@ from typing import Optional
 from orangebox.reader import Reader
 
 
-def main(path: str, output_path: Optional[str]):
+def main(path: str, output_path: Optional[str], dry_run: bool):
     reader = Reader(path)
     if not reader.headers:
         raise RuntimeError("Invalid blackbox log file")
 
+    if dry_run:
+        logging.info("Dry run")
+
     logging.debug("Found {:d} logs".format(reader.log_count))
 
     output_path = output_path or os.path.abspath(os.path.dirname(path))
-    os.makedirs(output_path, exist_ok=True)
+    if not dry_run:
+        os.makedirs(output_path, exist_ok=True)
 
     name, ext = os.path.splitext(os.path.basename(path))
     with open(path, "rb") as orig_file:
         for i, ptr in enumerate(reader.log_pointers):
             log_starts_at = reader.log_pointers[i]
-            logging.debug("Log #{:d} starts at {:d}".format(i + 1, log_starts_at))
+            logging.debug("Log #{0:d} starts at {1:d} (0x{1:X})".format(i + 1, log_starts_at))
             new_filename = "{}.{:d}{}".format(name, i + 1, ext)
             new_path = os.path.join(output_path, new_filename)
             size = reader.log_pointers[i + 1] - log_starts_at if i < reader.log_count - 1 else None
             orig_file.seek(log_starts_at)
             new_data = orig_file.read(size) if size is not None else orig_file.read()
-            with open(new_path, 'wb') as new_file:
-                new_file.write(new_data)
-            logging.info("Written: {:s} (size: {:d})".format(new_path, len(new_data)))
+            if not dry_run:
+                with open(new_path, 'wb') as new_file:
+                    new_file.write(new_data)
+                logging.info("Written: {:s} (size: {:d})".format(new_path, len(new_data)))
+            else:
+                logging.info("Would write: {:s} (size: {:d})".format(new_path, len(new_data)))
 
 
 if __name__ == "__main__":
@@ -56,6 +63,7 @@ if __name__ == "__main__":
                            help="Optional path to output directory, defaults to parent directory of the original log file")
     argparser.add_argument("-v", dest="verbosity", action="count", default=0,
                            help="Control verbosity (can be used multiple times)")
+    argparser.add_argument("-n", "--dry-run", action="store_true", help="Do not write anything")
 
     args = argparser.parse_args()
 
@@ -66,4 +74,4 @@ if __name__ == "__main__":
                         format='%(asctime)s %(name)s %(levelname)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    main(args.path, args.output)
+    main(args.path, args.output, args.dry_run)

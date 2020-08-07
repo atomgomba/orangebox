@@ -54,7 +54,7 @@ optional arguments:
 `bbsplit` can be used to split a flash chip log (which contains merged logs) into separate files.
 
 ```
-usage: bbsplit [-h] [-o DIR] [-v] path
+usage: bbsplit [-h] [-o DIR] [-v] [-n] path
 
 positional arguments:
   path                  Path to a blackbox log file
@@ -63,6 +63,7 @@ optional arguments:
   -h, --help            show this help message and exit
   -o DIR, --output DIR  Optional path to output directory, defaults to parent directory of the original log file (default: None)
   -v                    Control verbosity (can be used multiple times) (default: 0)
+  -n, --dry-run         Do not write anything (default: False)
 ```
 
 ## Development tools
