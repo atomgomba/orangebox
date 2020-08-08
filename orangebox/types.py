@@ -21,14 +21,39 @@ from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union
 
 class FrameType(Enum):
     INTER = 'P'
+    """Inter frames hold deltas
+    """
     INTRA = 'I'
+    """Intra frames are key frames
+    """
     GPS = 'G'
+    """Frames for GPS data
+    """
     SLOW = 'S'
+    """Slow frames are saved at a lower frequency
+    """
     GPS_HOME = 'H'
+    """Frame for GPS home position
+    """
     EVENT = 'E'
+    """Frames for log events
+    """
 
 
 class FieldDef:
+    """Holds data for a field definition. Field definitions describe the fields within a given type of frame.
+
+    :param frame_type: Type of frame
+    :type frame_type: FrameType
+    :param name: Name of the field
+    :param signed: Not used
+    :param predictor: Numerical index of a predictor function
+    :param encoding: Number indicating the value encoding type
+    :param decoderfun: Decoder callable (set by `.Reader` dynamically)
+    :type decoderfun: Optional[Decoder]
+    :param predictorfun: Predictor callable (set by `.Reader` dynamically)
+    :type predictorfun: Optional[Predictor]
+    """
     def __init__(self,
                  frame_type: FrameType,
                  name: Optional[str] = None,
@@ -71,11 +96,27 @@ class EventType(IntEnum):
 
 
 Number = Union[int, float]
+
 Frame = namedtuple('Frame', 'type data')
+"""
+:param type: Type of frame
+:type type: FrameType
+:param data: Frame data
+:type data: tuple
+"""
+
 Headers = Dict[str, Union[str, Number, List[Number]]]
 DecodedValue = Union[int, Tuple]
 Decoder = Callable[[Iterator[int], Optional["Context"]], DecodedValue]
 Predictor = Callable[[int, "Context"], int]
 FieldDefs = Dict[FrameType, List[FieldDef]]
+
 Event = namedtuple('Event', 'type data')
+"""
+:param type: Type of event
+:type type: EventType
+:param data: Arbitrary data for the event
+:type data: Any
+"""
+
 EventParser = Callable[[Iterator[int]], Optional[dict]]

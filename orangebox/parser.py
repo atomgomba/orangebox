@@ -29,24 +29,50 @@ _log = logging.getLogger(__name__)
 
 
 class Parser:
-    """Takes a `reader.Reader` instance and generates the final data output.
+    """Parse and iterate over decoded frames.
+    """
 
-    TODO: detecting and informing the user about possible file corruption
+    events = []  # type: List[Event]
+    """Log events found during parsing. All the events are available only after parsing has finished.
+    
+    :type: List[Event]
+    """
+
+    headers = {}  # type: Headers
+    """Headers key-value map. This will not contain the headers describing the field definitions. To get the raw
+    headers see `.Reader` instead. Key is a string, value can be a string, a number or a list of numbers.
+    """
+
+    field_names = []  # type: List[str]
+    """A list of all field names found in the header.
     """
 
     def __init__(self, reader: Reader):
-        self.events = []  # type: List[Event]
-        self.headers = {}  # type: Headers
-        self._reader = reader
-        self._end_of_log = False
-        self._ctx = None  # type: Optional[Context]
+        """
+        :param reader: The `.Reader` used to iterate over the relevant bits of bytes
+        :type reader: Reader
+        """
+        self.events = []
+        self.headers = {}
         self.field_names = []
         for fdef in reader.field_defs.values():
             self.field_names += filter(lambda x: x is not None and x not in self.field_names,
                                        map(lambda x: x.name, fdef))
+        self._end_of_log = False
+        self._ctx = None  # type: Optional[Context]
+        self._reader = reader
         self.set_log_index(reader.log_index)
 
     def set_log_index(self, index: int):
+        """Select a log by index within the file. Calling this method will set the new index for the underlying
+        `.Reader` object and also update the header information as a side effect. The state of the parser will be reset.
+
+        The first index is 1. You can get the maximum number of logs from `.Reader.log_count`.
+
+        See also `.Reader.set_log_index()`.
+
+        :param index: The selected log index
+        """
         reader = self._reader
         reader.set_log_index(index)
         self.events = []
@@ -56,9 +82,19 @@ class Parser:
 
     @staticmethod
     def load(path: str, log_index: int = 1) -> "Parser":
+        """Factory method to create a parser for a log file.
+
+        :param path: Path to blackbox log file
+        :param log_index: Index within log file (defaults to 1)
+        :rtype: Parser
+        """
         return Parser(Reader(path, log_index))
 
     def frames(self) -> Iterator[Frame]:
+        """Return an iterator for the current frames.
+
+        :rtype: Iterator[Frame]
+        """
         field_defs = self._reader.field_defs
         last_slow = None  # type: Optional[Frame]
         ctx = self._ctx  # type: Context
@@ -87,7 +123,7 @@ class Parser:
                 if self._end_of_log:
                     _log.info(
                         "Frames: total: {total:d}, parsed: {parsed:d}, skipped: {skipped:d} invalid: {invalid:d} ({invalid_percent:.2f}%)"
-                        .format(**ctx.stats))
+                            .format(**ctx.stats))
                     break
                 continue
             if ftype not in field_defs:
@@ -177,4 +213,8 @@ class Parser:
 
     @property
     def reader(self) -> Reader:
+        """Return the underlying `.Reader` object.
+
+        :rtype: Reader
+        """
         return self._reader

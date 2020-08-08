@@ -41,15 +41,23 @@ def _trycast(s: str) -> Union[Number, str]:
 
 
 class Reader:
-    """Reads a flight log and stores raw data in a structured way. Does not do any real parsing.
+    """Implements a file-like object for reading a flight log and store the raw data in a structured way. Does not do
+    any real parsing, the iterator just yields bytes.
 
-    TODO: detecting and informing the user about possible file corruption (missing headers, etc.)
+    .. todo:: Detecting and informing the user about possible file corruption (missing headers, etc.)
     """
 
+    headers = {}  # type: Headers
+    field_defs = {}  # type: Dict[FrameType, List[FieldDef]]
+
     def __init__(self, path: str, log_index: Optional[int] = None):
-        self.headers = dict()  # type: Headers
-        self.field_defs = dict()  # type: Dict[FrameType, List[FieldDef]]
-        self._log_index = 0  # type: Optional[int]
+        """
+        :param path: Path to a log file
+        :param log_index: Session index within log file. If set to `None` (the default) there will be no session selected and headers and frame data won't be read until the first call to `.set_log_index()`.
+        """
+        self.headers = {}
+        self.field_defs = {}
+        self._log_index = 0
         self._header_size = 0
         self._path = path
         _log.info("Processing: " + path)
@@ -63,9 +71,6 @@ class Reader:
                 _log.critical(msg)
                 raise IOError(msg)
             self._find_pointers(f)
-            if log_index is None:
-                f.seek(0)
-                self._update_headers(f)
         if log_index is not None:
             self.set_log_index(log_index)
 
@@ -97,9 +102,29 @@ class Reader:
 
     @property
     def log_index(self) -> int:
+        """Return the currently set log index. May return 0 if `.set_log_index()` haven't been called yet.
+        """
         return self._log_index
 
+    @property
+    def log_count(self) -> int:
+        """The number of logs in the current file.
+        """
+        return len(self._log_pointers)
+
+    @property
+    def log_pointers(self) -> List[int]:
+        """List of byte pointers to the start of each log file, including headers.
+        """
+        return self._log_pointers
+
     def set_log_index(self, index: int):
+        """Set the current log index and read its corresponding frame data as raw bytes, plus parse the raw headers of
+        the selected log.
+
+        :param index: The selected log index
+        :raise RuntimeError: If ``index`` is smaller than 1 or greater than `.log_count`
+        """
         if index == self._log_index:
             return
         if index < 1 or self.log_count < index:
@@ -118,17 +143,25 @@ class Reader:
         _log.info("Log #{:d} out of {:d} (start: 0x{:X}, size: {:d})"
                   .format(self._log_index, self.log_count, start, self._frame_data_len))
 
-    def tell(self) -> int:
-        return self._frame_data_ptr
-
-    def seek(self, n: int):
-        self._frame_data_ptr = n
-
     def value(self) -> int:
+        """Get current byte value.
+        """
         return self._frame_data[self._frame_data_ptr]
 
     def has_subsequent(self, data: bytes) -> bool:
+        """Return `True` if upcoming bytes equal ``data``.
+        """
         return self._frame_data[self._frame_data_ptr:self._frame_data_ptr + len(data)] == data
+
+    def tell(self) -> int:
+        """IO protocol
+        """
+        return self._frame_data_ptr
+
+    def seek(self, n: int):
+        """IO protocol
+        """
+        self._frame_data_ptr = n
 
     def __iter__(self) -> Iterator[Optional[int]]:
         return self
@@ -196,11 +229,3 @@ class Reader:
         # copy field names from INTRA to INTER defs
         for i, fdef in enumerate(field_defs[FrameType.INTER]):
             fdef.name = field_defs[FrameType.INTRA][i].name
-
-    @property
-    def log_count(self) -> int:
-        return len(self._log_pointers)
-
-    @property
-    def log_pointers(self) -> List[int]:
-        return self._log_pointers

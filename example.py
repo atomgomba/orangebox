@@ -22,3 +22,7 @@ for frame in parser.frames():
 
 # Complete list of events only available once all frames have been parsed
 print("events:", parser.events)
+
+# Selecting another log changes the header and frame data produced by the Parser
+# and also clears any previous results and state
+parser.set_log_index(1)

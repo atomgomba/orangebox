@@ -19,13 +19,14 @@ import csv
 import logging
 import sys
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from typing import Optional
 
 from orangebox import Parser
 
 
-def main(args):
-    output = open(args.output, "w") if args.output is not None else sys.stdout
-    parser = Parser.load(args.path)
+def main(path: str, output: Optional[str], log_index: int):
+    output = open(output, "w") if output is not None else sys.stdout
+    parser = Parser.load(path, log_index)
     with output as f:
         writer = csv.writer(f)
         writer.writerow(parser.field_names)
@@ -37,8 +38,10 @@ if __name__ == "__main__":
     # noinspection PyTypeChecker
     argparser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     argparser.add_argument("path", help="Path to a blackbox log file")
-    argparser.add_argument("-o", "--output", default=None,
+    argparser.add_argument("-o", "--output", metavar="PATH", default=None,
                            help="Optional path to an output file (otherwise use standard output)")
+    argparser.add_argument("-i", "--index", type=int, dest="log_index", default=1,
+                           help="Log index number (In case of merged input)")
     argparser.add_argument("-v", dest="verbosity", action="count", default=0,
                            help="Control verbosity (can be used multiple times)")
 
@@ -51,4 +54,4 @@ if __name__ == "__main__":
                         format='%(asctime)s %(name)s %(levelname)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    main(args)
+    main(args.path, args.output, args.log_index)
