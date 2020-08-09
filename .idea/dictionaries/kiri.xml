@@ -9,6 +9,7 @@
       <w>cleanflight</w>
       <w>decoderfun</w>
       <w>defs</w>
+      <w>denom</w>
       <w>desync</w>
       <w>fdef</w>
       <w>fdefs</w>
@@ -19,6 +20,8 @@
       <w>gtune</w>
       <w>inflight</w>
       <w>levelname</w>
+      <w>minmotor</w>
+      <w>minthrottle</w>
       <w>newfile</w>
       <w>numbytes</w>
       <w>orangebox</w>
@@ -27,6 +30,7 @@
       <w>rawvalue</w>
       <w>soldak</w>
       <w>trycast</w>
+      <w>vbatref</w>
     </words>
   </dictionary>
 </component>

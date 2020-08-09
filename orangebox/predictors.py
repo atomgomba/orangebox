@@ -31,7 +31,7 @@ def _noop(new: Number, ctx: Context) -> Number:
 
 @map_to(1, predictor_map)
 def _previous(new: Number, ctx: Context) -> Number:
-    return new + ctx.get_past_value(0)
+    return new + ctx.get_past_value(0, 0)
 
 
 @map_to(2, predictor_map)
@@ -64,6 +64,18 @@ def _increment(new: Number, ctx: Context) -> Number:
     return 1 + ctx.get_past_value(0) + ctx.count_skipped_frames()
 
 
+@map_to(7, predictor_map)
+def _home_coord_0(new: Number, ctx: Context) -> Number:
+    # TODO: store GPS frame history
+    return 0
+
+
+@map_to(256, predictor_map)
+def _home_coord_1(new: Number, ctx: Context) -> Number:
+    # TODO: store GPS frame history
+    return 0
+
+
 # noinspection PyUnusedLocal
 @map_to(8, predictor_map)
 def _1500(new: Number, ctx: Context) -> Number:
@@ -73,6 +85,12 @@ def _1500(new: Number, ctx: Context) -> Number:
 @map_to(9, predictor_map)
 def _vbatref(new: Number, ctx: Context) -> Number:
     return new + ctx.headers.get("vbatref", 0)
+
+
+@map_to(10, predictor_map)
+def _last_main_frame_time(new: Number, ctx: Context) -> Number:
+    # TODO: test this
+    return new + ctx.get_past_value(1, 0)
 
 
 @map_to(11, predictor_map)
