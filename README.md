@@ -1,5 +1,8 @@
 # Orangebox
 
+[![PyPI version](https://badge.fury.io/py/orangebox.svg)](https://badge.fury.io/py/orangebox) 
+[![Documentation Status](https://readthedocs.org/projects/orangebox/badge/?version=latest)](https://orangebox.readthedocs.io/en/latest/?badge=latest)
+
 A Cleanflight/Betaflight blackbox log parser written in Python 3. 
 
 Orangebox has no dependencies other than the Python standard library, although it might be worthy to investigate 
