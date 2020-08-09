@@ -15,29 +15,16 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
-from typing import BinaryIO, Dict, Iterator, List, Optional, Union
+from typing import BinaryIO, Dict, Iterator, List, Optional
 
 from .decoders import decoder_map
 from .predictors import predictor_map
-from .types import FieldDef, FrameType, Headers, Number
+from .tools import _trycast
+from .types import FieldDef, FrameType, Headers
 
 MAX_FRAME_SIZE = 256
 
 _log = logging.getLogger(__name__)
-
-
-def _trycast(s: str) -> Union[Number, str]:
-    """Try to cast a string to the most appropriate numeric type.
-    """
-    if s.startswith("0x"):
-        return int(s, 16)
-    try:
-        return int(s)
-    except ValueError:
-        try:
-            return float(s)
-        except ValueError:
-            return s
 
 
 class Reader:
@@ -47,16 +34,13 @@ class Reader:
     .. todo:: Detecting and informing the user about possible file corruption (missing headers, etc.)
     """
 
-    headers = {}  # type: Headers
-    field_defs = {}  # type: Dict[FrameType, List[FieldDef]]
-
     def __init__(self, path: str, log_index: Optional[int] = None):
         """
         :param path: Path to a log file
         :param log_index: Session index within log file. If set to `None` (the default) there will be no session selected and headers and frame data won't be read until the first call to `.set_log_index()`.
         """
-        self.headers = {}
-        self.field_defs = {}
+        self._headers = {}  # type: Headers
+        self._field_defs = {}  # type: Dict[FrameType, List[FieldDef]]
         self._log_index = 0
         self._header_size = 0
         self._path = path
@@ -73,50 +57,6 @@ class Reader:
             self._find_pointers(f)
         if log_index is not None:
             self.set_log_index(log_index)
-
-    def _update_headers(self, f: BinaryIO):
-        start = f.tell()
-        while True:
-            line = f.readline()
-            if not line:
-                # nothing left to read
-                break
-            has_next = self._parse_header_line(line)
-            if not has_next:
-                f.seek(-len(line), 1)
-                _log.debug(
-                    "End of headers at {0:d} (0x{0:X}) (headers: {1:d})".format(f.tell(), len(self.headers.keys())))
-                break
-        self._header_size = f.tell() - start
-
-    def _find_pointers(self, f: BinaryIO):
-        start = f.tell()
-        first_line = f.readline()
-        f.seek(start)
-        content = f.read()
-        new_index = content.find(first_line)
-        step = len(first_line)
-        while -1 < new_index:
-            self._log_pointers.append(new_index)
-            new_index = content.find(first_line, new_index + step + 1)
-
-    @property
-    def log_index(self) -> int:
-        """Return the currently set log index. May return 0 if `.set_log_index()` haven't been called yet.
-        """
-        return self._log_index
-
-    @property
-    def log_count(self) -> int:
-        """The number of logs in the current file.
-        """
-        return len(self._log_pointers)
-
-    @property
-    def log_pointers(self) -> List[int]:
-        """List of byte pointers to the start of each log file, including headers.
-        """
-        return self._log_pointers
 
     def set_log_index(self, index: int):
         """Set the current log index and read its corresponding frame data as raw bytes, plus parse the raw headers of
@@ -143,38 +83,20 @@ class Reader:
         _log.info("Log #{:d} out of {:d} (start: 0x{:X}, size: {:d})"
                   .format(self._log_index, self.log_count, start, self._frame_data_len))
 
-    def value(self) -> int:
-        """Get current byte value.
-        """
-        return self._frame_data[self._frame_data_ptr]
-
-    def has_subsequent(self, data: bytes) -> bool:
-        """Return `True` if upcoming bytes equal ``data``.
-        """
-        return self._frame_data[self._frame_data_ptr:self._frame_data_ptr + len(data)] == data
-
-    def tell(self) -> int:
-        """IO protocol
-        """
-        return self._frame_data_ptr
-
-    def seek(self, n: int):
-        """IO protocol
-        """
-        self._frame_data_ptr = n
-
-    def __iter__(self) -> Iterator[Optional[int]]:
-        return self
-
-    def __next__(self) -> Optional[int]:
-        if self._frame_data_len == self._frame_data_ptr:
-            return None
-        byte = self._frame_data[self._frame_data_ptr]
-        self._frame_data_ptr += 1
-        return byte
-
-    def __len__(self) -> int:
-        return self._frame_data_len
+    def _update_headers(self, f: BinaryIO):
+        start = f.tell()
+        while True:
+            line = f.readline()
+            if not line:
+                # nothing left to read
+                break
+            has_next = self._parse_header_line(line)
+            if not has_next:
+                f.seek(-len(line), 1)
+                _log.debug(
+                    "End of headers at {0:d} (0x{0:X}) (headers: {1:d})".format(f.tell(), len(self._headers.keys())))
+                break
+        self._header_size = f.tell() - start
 
     def _parse_header_line(self, data: bytes) -> bool:
         """Parse a header line and return its resulting character length.
@@ -186,15 +108,26 @@ class Reader:
             return False
         line = data.decode().replace("H ", "", 1)
         name, value = line.split(':', 1)
-        self.headers[name.strip()] = [_trycast(s.strip()) for s in value.split(',')] if ',' in value \
+        self._headers[name.strip()] = [_trycast(s.strip()) for s in value.split(',')] if ',' in value \
             else _trycast(value.strip())
         return True
+
+    def _find_pointers(self, f: BinaryIO):
+        start = f.tell()
+        first_line = f.readline()
+        f.seek(start)
+        content = f.read()
+        new_index = content.find(first_line)
+        step = len(first_line)
+        while -1 < new_index:
+            self._log_pointers.append(new_index)
+            new_index = content.find(first_line, new_index + step + 1)
 
     def _build_field_defs(self):
         """Use the read headers to populate the `field_defs` property.
         """
-        headers = self.headers
-        field_defs = self.field_defs
+        headers = self._headers
+        field_defs = self._field_defs
         predictors = predictor_map
         decoders = decoder_map
         for frame_type in FrameType:
@@ -229,3 +162,76 @@ class Reader:
         # copy field names from INTRA to INTER defs
         for i, fdef in enumerate(field_defs[FrameType.INTER]):
             fdef.name = field_defs[FrameType.INTRA][i].name
+
+    @property
+    def log_index(self) -> int:
+        """Return the currently set log index. May return 0 if `.set_log_index()` haven't been called yet.
+
+        :type: int
+        """
+        return self._log_index
+
+    @property
+    def log_count(self) -> int:
+        """The number of logs in the current file.
+
+        :type: int
+        """
+        return len(self._log_pointers)
+
+    @property
+    def log_pointers(self) -> List[int]:
+        """List of byte pointers to the start of each log file, including headers.
+
+        :type: List[int]
+        """
+        return list(self._log_pointers)
+
+    @property
+    def headers(self) -> Headers:
+        """Dict of parsed headers.
+
+        :type: dict
+        """
+        return dict(self._headers)
+
+    @property
+    def field_defs(self) -> Dict[FrameType, List[FieldDef]]:
+        """Dict of built field definitions.
+
+        :type: dict
+        """
+        return dict(self._field_defs)
+
+    def value(self) -> int:
+        """Get current byte value.
+        """
+        return self._frame_data[self._frame_data_ptr]
+
+    def has_subsequent(self, data: bytes) -> bool:
+        """Return `True` if upcoming bytes equal ``data``.
+        """
+        return self._frame_data[self._frame_data_ptr:self._frame_data_ptr + len(data)] == data
+
+    def tell(self) -> int:
+        """IO protocol
+        """
+        return self._frame_data_ptr
+
+    def seek(self, n: int):
+        """IO protocol
+        """
+        self._frame_data_ptr = n
+
+    def __iter__(self) -> Iterator[Optional[int]]:
+        return self
+
+    def __next__(self) -> Optional[int]:
+        if self._frame_data_len == self._frame_data_ptr:
+            return None
+        byte = self._frame_data[self._frame_data_ptr]
+        self._frame_data_ptr += 1
+        return byte
+
+    def __len__(self) -> int:
+        return self._frame_data_len

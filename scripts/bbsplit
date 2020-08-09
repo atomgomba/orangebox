@@ -24,7 +24,7 @@ from orangebox.reader import Reader
 
 
 def main(path: str, output_path: Optional[str], dry_run: bool):
-    reader = Reader(path)
+    reader = Reader(path, 1)
     if not reader.headers:
         raise RuntimeError("Invalid blackbox log file")
 

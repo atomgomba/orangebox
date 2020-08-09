@@ -5,7 +5,7 @@ from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
 from orangebox import Parser
 # noinspection PyProtectedMember
-from orangebox.reader import _trycast
+from orangebox.tools import _trycast
 from orangebox.types import FrameType
 
 

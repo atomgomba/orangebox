@@ -116,7 +116,7 @@ Event = namedtuple('Event', 'type data')
 :param type: Type of event
 :type type: EventType
 :param data: Arbitrary data for the event
-:type data: Any
+:type data: dict
 """
 
 EventParser = Callable[[Iterator[int]], Optional[dict]]

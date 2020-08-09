@@ -15,7 +15,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from struct import pack, unpack
-from typing import Any, Callable
+from typing import Any, Callable, Union
+
+from orangebox.types import Number
 
 
 def map_to(key: Any, amap: dict) -> Callable:
@@ -64,3 +66,17 @@ def sign_extend_4bit(nibble):
 
 def sign_extend_2bit(byte) -> int:
     return toint32(byte | 0xFFFFFFFC) if byte & 0x02 else byte
+
+
+def _trycast(s: str) -> Union[Number, str]:
+    """Try to cast a string to the most appropriate numeric type.
+    """
+    if s.startswith("0x"):
+        return int(s, 16)
+    try:
+        return int(s)
+    except ValueError:
+        try:
+            return float(s)
+        except ValueError:
+            return s

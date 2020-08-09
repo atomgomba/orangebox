@@ -11,16 +11,15 @@ For development you can use a virtual environment and install the package in "ed
     # create and activate virtual environment
     cd orangebox
     python3 -m venv env
-    . env/bin/activate
 
     # install orangebox for development in the active environment
-    python setup.py develop
+    env/bin/python setup.py develop
 
-If you wish to remove the development install and keep the virtual env, you can do it like this from within the active environment:
+If you wish to remove the development install and keep the virtual env you can uninstall it:
 
 ::
 
-    $ python setup.py develop --uninstall
+    $ env/bin/python setup.py develop --uninstall
 
 Development tools
 ~~~~~~~~~~~~~~~~~

@@ -3,7 +3,7 @@
 Utility scripts
 ---------------
 
-The package ships with two command-line utility scripts.
+The package ships with two command-line utility scripts. Every script (including `parser_test.py`) accepts `-v`, `-vv` and `-vvv` as a way to increase logging level.
 
 `bb2csv`
 ^^^^^^^^

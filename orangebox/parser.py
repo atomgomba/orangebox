@@ -32,35 +32,17 @@ class Parser:
     """Parse and iterate over decoded frames.
     """
 
-    events = []  # type: List[Event]
-    """Log events found during parsing. All the events are available only after parsing has finished.
-    
-    :type: List[Event]
-    """
-
-    headers = {}  # type: Headers
-    """Headers key-value map. This will not contain the headers describing the field definitions. To get the raw
-    headers see `.Reader` instead. Key is a string, value can be a string, a number or a list of numbers.
-    """
-
-    field_names = []  # type: List[str]
-    """A list of all field names found in the header.
-    """
-
     def __init__(self, reader: Reader):
         """
         :param reader: The `.Reader` used to iterate over the relevant bits of bytes
         :type reader: Reader
         """
-        self.events = []
-        self.headers = {}
-        self.field_names = []
-        for fdef in reader.field_defs.values():
-            self.field_names += filter(lambda x: x is not None and x not in self.field_names,
-                                       map(lambda x: x.name, fdef))
+        self._reader = reader
+        self._events = []  # type: List[Event]
+        self._headers = {}  # type: Headers
+        self._field_names = []  # type: List[str]
         self._end_of_log = False
         self._ctx = None  # type: Optional[Context]
-        self._reader = reader
         self.set_log_index(reader.log_index)
 
     def set_log_index(self, index: int):
@@ -73,12 +55,16 @@ class Parser:
 
         :param index: The selected log index
         """
+        self._events = []
+        self._end_of_log = False
         reader = self._reader
         reader.set_log_index(index)
-        self.events = []
-        self.headers = {k: v for k, v in reader.headers.items() if "Field" not in k}
-        self._end_of_log = False
-        self._ctx = Context(self.headers, reader.field_defs)
+        self._headers = {k: v for k, v in reader.headers.items() if "Field" not in k}
+        self._ctx = Context(self._headers, reader.field_defs)
+        self._field_names = []
+        for fdef in reader.field_defs.values():
+            self._field_names += filter(lambda x: x is not None and x not in self._field_names,
+                                        map(lambda x: x.name, fdef))
 
     @staticmethod
     def load(path: str, log_index: int = 1) -> "Parser":
@@ -212,9 +198,34 @@ class Parser:
         return True
 
     @property
+    def headers(self) -> Headers:
+        """Headers key-value map. This will not contain the headers describing the field definitions. To get the raw
+        headers see `.Reader` instead. Key is a string, value can be a string, a number or a list of numbers.
+
+        :type: dict
+        """
+        return dict(self._headers)
+
+    @property
+    def events(self) -> List[Event]:
+        """Log events found during parsing. All the events are available only after parsing has finished.
+
+        :type: List[Event]
+        """
+        return list(self._events)
+
+    @property
+    def field_names(self) -> List[str]:
+        """A list of all field names found in the current header.
+
+        :type: List[str]
+        """
+        return list(self._field_names)
+
+    @property
     def reader(self) -> Reader:
         """Return the underlying `.Reader` object.
 
-        :rtype: Reader
+        :type: Reader
         """
         return self._reader
