@@ -98,26 +98,30 @@ class Parser:
                     ctx.invalid_frame_count += 1
                 last_frame_is_corrupt = True
                 continue
+
+            ctx.frame_type = ftype
             last_frame_is_corrupt = False
             last_frame_pos = reader.tell() - 1
-            ctx.frame_type = ftype
+
             if ftype == FrameType.EVENT:
-                # parse event frame
-                if not self._parse_event(reader):
+                # parse event frame (event frames do not depend on field defs)
+                if not self._parse_event_frame(reader):
                     ctx.invalid_frame_count += 1
                 ctx.read_frame_count += 1
                 if self._end_of_log:
                     _log.info(
                         "Frames: total: {total:d}, parsed: {parsed:d}, skipped: {skipped:d} invalid: {invalid:d} ({invalid_percent:.2f}%)"
-                            .format(**ctx.stats))
+                        .format(**ctx.stats))
                     break
                 continue
+
             if ftype not in field_defs:
                 _log.warning("No field def found for frame type {!r}".format(ftype))
                 ctx.invalid_frame_count += 1
                 ctx.read_frame_count += 1
                 continue
-            # decode frame
+
+            # decode INTRA or INTER frame
             frame = self._parse_frame(field_defs[ftype], reader)
 
             if ftype == FrameType.SLOW:
@@ -125,6 +129,7 @@ class Parser:
                 last_slow = frame
                 ctx.read_frame_count += 1
                 continue
+
             # validate frame
             current_time = ctx.get_current_value_by_name(ftype, "time")
             if last_time is not None and last_time >= current_time and MAX_TIME_JUMP < current_time - last_time:
@@ -143,9 +148,11 @@ class Parser:
                 ctx.invalid_frame_count += 1
                 continue
             last_iter = current_iter
+
             if last_slow is not None:
                 # append data from previous SLOW frame
                 frame = Frame(ftype, frame.data + last_slow.data)
+
             try:
                 FrameType(chr(reader.value()))
             except ValueError:
@@ -182,7 +189,7 @@ class Parser:
                 result += (value,)
         return Frame(ctx.frame_type, result)
 
-    def _parse_event(self, reader: Reader) -> bool:
+    def _parse_event_frame(self, reader: Reader) -> bool:
         byte = next(reader)
         try:
             event_type = EventType(byte)

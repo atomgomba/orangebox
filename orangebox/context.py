@@ -35,6 +35,7 @@ class Context:
             Frame(FrameType.INTRA, b''),
             Frame(FrameType.INTRA, b''),
             Frame(FrameType.INTRA, b''))  # type: Tuple[Frame, Frame, Frame]
+        self.last_gps_frame = Frame(FrameType.GPS, b'')
         self.current_frame = tuple()  # the current (possibly yet incomplete) frame
         self.last_iter = -1
         self._names_to_indices = dict()  # type: Dict[FrameType, Dict[str, int]]
@@ -63,6 +64,8 @@ class Context:
         if frame.type == FrameType.INTRA:
             # override history with current INTRA frame
             self.past_frames = (frame, frame, frame)
+        elif frame.type == FrameType.GPS:
+            self.last_gps_frame = frame
         else:
             self.past_frames = (frame, self.past_frames[0], self.past_frames[1])
         self.frame_count += 1
