@@ -163,10 +163,10 @@ class Parser:
         ctx.field_index = 0
         field_count = ctx.field_def_counts[ctx.frame_type]
         while ctx.field_index < field_count:
-            # update available parsed data
+            # make current frame available in context
             ctx.current_frame = result
-            # decode field value
             fdef = fdefs[ctx.field_index]
+            # decode current field value
             rawvalue = fdef.decoderfun(reader, ctx)
             # apply predictions
             if isinstance(rawvalue, tuple):
