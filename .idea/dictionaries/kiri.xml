@@ -1,6 +1,7 @@
 <component name="ProjectDictionaryState">
   <dictionary name="kiri">
     <words>
+      <w>amap</w>
       <w>argparser</w>
       <w>asctime</w>
       <w>autotune</w>
@@ -12,6 +13,7 @@
       <w>denom</w>
       <w>desync</w>
       <w>fdef</w>
+      <w>fdeflen</w>
       <w>fdefs</w>
       <w>firstline</w>
       <w>framedef</w>
@@ -29,6 +31,7 @@
       <w>predictorfun</w>
       <w>rawvalue</w>
       <w>soldak</w>
+      <w>toint</w>
       <w>trycast</w>
       <w>vbatref</w>
     </words>
