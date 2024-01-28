@@ -54,10 +54,11 @@ def _neg_14bit(data: Iterator[int], ctx: Optional[Context] = None) -> DecodedVal
 @map_to(6, decoder_map)
 def _tag8_8svb(data: Iterator[int], ctx: Optional[Context] = None) -> DecodedValue:
     # count adjacent fields with same encoding
-    group_count = 0
+    group_count = 8
     fdeflen = ctx.field_def_counts[ctx.frame_type]
     for i in range(ctx.field_index + 1, ctx.field_index + 8):
         if i == fdeflen:
+            group_count = (fdeflen-1) - ctx.field_index
             break
         if ctx.field_defs[ctx.frame_type][i].encoding != 6:
             group_count = i - ctx.field_index
