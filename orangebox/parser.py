@@ -62,9 +62,13 @@ class Parser:
         self._headers = {k: v for k, v in reader.headers.items() if "Field" not in k}
         self._ctx = Context(self._headers, reader.field_defs)
         self._field_names = []
-        for fdef in reader.field_defs.values():
-            self._field_names += filter(lambda x: x is not None and x not in self._field_names,
-                                        map(lambda x: x.name, fdef))
+        for ftype in [FrameType.INTRA, FrameType.SLOW, FrameType.GPS]:
+            # Note: retaining the order above is important for communality with bb-log-viewer
+            # Note 2: GPS_home is not written out by the blackbox-log-viewer (but added as offset to GPS_coord)
+            # Note 3: GPS mysteriously contains a "time" field. This is correctly skipped by the filter below
+            if ftype in reader.field_defs:
+                self._field_names += filter(lambda x: x is not None and x not in self._field_names,
+                                            map(lambda x: x.name, reader.field_defs[ftype]))
 
     @staticmethod
     def load(path: str, log_index: int = 1) -> "Parser":
@@ -83,6 +87,7 @@ class Parser:
         """
         field_defs = self._reader.field_defs
         last_slow = None  # type: Optional[Frame]
+        last_gps = None  # type: Optional[Frame]
         ctx = self._ctx  # type: Context
         reader = self._reader
         last_time = None
@@ -121,12 +126,20 @@ class Parser:
                 ctx.read_frame_count += 1
                 continue
 
-            # decode INTRA or INTER frame
+            # decode INTRA, INTER, SLOW, GPS or GPS_HOME frame
             frame = self._parse_frame(field_defs[ftype], reader)
 
+            # store these frames to append them to subsequent frames:
             if ftype == FrameType.SLOW:
-                # store this frame to append it to the subsequent non-SLOW frame
                 last_slow = frame
+                ctx.read_frame_count += 1
+                continue
+            elif ftype == FrameType.GPS:
+                last_gps = frame
+                ctx.read_frame_count += 1
+                continue
+            elif ftype == FrameType.GPS_HOME:
+                ctx.add_frame(frame)
                 ctx.read_frame_count += 1
                 continue
 
@@ -149,9 +162,25 @@ class Parser:
                 continue
             last_iter = current_iter
 
-            if last_slow is not None:
-                # append data from previous SLOW frame
-                frame = Frame(ftype, frame.data + last_slow.data)
+            # add in extra frames (GPS, GPS_HOME and SLOW)
+            edata = []
+
+            # add slow frames (list of empty strings if not available to ensure
+            # the right amount of ',' are written out at least)
+            if FrameType.SLOW in field_defs:
+                if last_slow:
+                    edata += last_slow.data
+                else:
+                    edata += [""] * len(field_defs[FrameType.SLOW])
+
+            # add GPS frames the way blackbox-log-viewer seems to do it
+            if FrameType.GPS in field_defs:
+                if last_gps:
+                    edata += list(last_gps.data[1:]) # skip time
+                else:
+                    edata += [""] * (len(field_defs[FrameType.GPS]) - 1)
+
+            frame = Frame(ftype, frame.data + tuple(edata))
 
             try:
                 FrameType(chr(reader.value()))
