@@ -40,49 +40,49 @@ def flight_mode(data: Reader) -> Optional[dict]:
 
 
 @map_to(EventType.AUTOTUNE_TARGETS, event_map)
-def autotune_targets(data: Reader) -> Optional[dict]:
+def autotune_targets(_: Reader) -> Optional[dict]:
     # TODO
     pass
 
 
 @map_to(EventType.AUTOTUNE_CYCLE_START, event_map)
-def autotune_cycle_start(data: Reader) -> Optional[dict]:
+def autotune_cycle_start(_: Reader) -> Optional[dict]:
     # TODO
     pass
 
 
 @map_to(EventType.AUTOTUNE_CYCLE_RESULT, event_map)
-def autotune_cycle_result(data: Reader) -> Optional[dict]:
+def autotune_cycle_result(_: Reader) -> Optional[dict]:
     # TODO
     pass
 
 
 @map_to(EventType.GTUNE_CYCLE_RESULT, event_map)
-def gtune_cycle_result(data: Reader) -> Optional[dict]:
+def gtune_cycle_result(_: Reader) -> Optional[dict]:
     # TODO
     pass
 
 
 @map_to(EventType.CUSTOM_BLANK, event_map)
-def custom_blank(data: Reader) -> Optional[dict]:
+def custom_blank(_: Reader) -> Optional[dict]:
     # TODO
     pass
 
 
 @map_to(EventType.TWITCH_TEST, event_map)
-def twitch_test(data: Reader) -> Optional[dict]:
+def twitch_test(_: Reader) -> Optional[dict]:
     # TODO
     pass
 
 
 @map_to(EventType.INFLIGHT_ADJUSTMENT, event_map)
-def inflight_adjustment(data: Reader) -> Optional[dict]:
+def inflight_adjustment(_: Reader) -> Optional[dict]:
     # TODO
     pass
 
 
 @map_to(EventType.LOGGING_RESUME, event_map)
-def logging_resume(data: Reader) -> Optional[dict]:
+def logging_resume(_: Reader) -> Optional[dict]:
     # TODO
     pass
 

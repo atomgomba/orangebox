@@ -23,9 +23,8 @@ from .types import FrameType, Number, Predictor
 predictor_map = dict()  # type: Dict[int, Predictor]
 
 
-# noinspection PyUnusedLocal
 @map_to(0, predictor_map)
-def _noop(new: Number, ctx: Context) -> Number:
+def _noop(new: Number, _: Context) -> Number:
     return new
 
 
@@ -58,33 +57,27 @@ def _motor0(new: Number, ctx: Context) -> Number:
     return new + ctx.get_current_value_by_name(FrameType.INTRA, "motor[0]")
 
 
-# noinspection PyUnusedLocal
 @map_to(6, predictor_map)
-def _increment(new: Number, ctx: Context) -> Number:
+def _increment(_: Number, ctx: Context) -> Number:
     return 1 + ctx.get_past_value(0) + ctx.count_skipped_frames()
 
 
 @map_to(7, predictor_map)
 def _home_coord_0(new: Number, ctx: Context) -> Number:
-    if ctx.last_gps_home_frame.data:
-        result = ctx.last_gps_home_frame.data[0] + new
-    else:
-        result = 0
-    return result
+    if not ctx.last_gps_home_frame.data:
+        return 0
+    return new + ctx.last_gps_home_frame.data[0]
 
 
 @map_to(256, predictor_map)
 def _home_coord_1(new: Number, ctx: Context) -> Number:
-    if ctx.last_gps_home_frame.data:
-        result = ctx.last_gps_home_frame.data[1] + new
-    else:
-        result = 0
-    return result
+    if not ctx.last_gps_home_frame.data:
+        return 0
+    return new + ctx.last_gps_home_frame.data[1]
 
 
-# noinspection PyUnusedLocal
 @map_to(8, predictor_map)
-def _1500(new: Number, ctx: Context) -> Number:
+def _1500(new: Number, _: Context) -> Number:
     return new + 1500
 
 

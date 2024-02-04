@@ -176,7 +176,7 @@ class Parser:
             # add GPS frames the way blackbox-log-viewer seems to do it
             if FrameType.GPS in field_defs:
                 if last_gps:
-                    extra_data += list(last_gps.data[1:]) # skip time
+                    extra_data += list(last_gps.data[1:])  # skip time
                 else:
                     extra_data += [""] * (len(field_defs[FrameType.GPS]) - 1)
 

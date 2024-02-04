@@ -134,7 +134,7 @@ def _tag8_4s16_versioned(data_version: int) -> Decoder:
         return _tag8_4s16_v2
 
 
-def _tag8_4s16_v1(data: Iterator[int], ctx: Optional[Context] = None) -> DecodedValue:
+def _tag8_4s16_v1(_: Iterator[int], __: Optional[Context] = None) -> DecodedValue:
     # TODO
     return "TODO:tag8_4s16_v1"
 
@@ -186,6 +186,6 @@ def _null(data: Iterator[int], ctx: Optional[Context] = None) -> DecodedValue:
 
 
 @map_to(10, decoder_map)
-def _tag2_3svariable(data: Iterator[int], ctx: Optional[Context] = None) -> DecodedValue:
+def _tag2_3svariable(_: Iterator[int], __: Optional[Context] = None) -> DecodedValue:
     # TODO
     return "TODO:tag2_3svariable"
