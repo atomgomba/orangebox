@@ -163,24 +163,24 @@ class Parser:
             last_iter = current_iter
 
             # add in extra frames (GPS, GPS_HOME and SLOW)
-            edata = []
+            extra_data = []
 
             # add slow frames (list of empty strings if not available to ensure
             # the right amount of ',' are written out at least)
             if FrameType.SLOW in field_defs:
                 if last_slow:
-                    edata += last_slow.data
+                    extra_data += last_slow.data
                 else:
-                    edata += [""] * len(field_defs[FrameType.SLOW])
+                    extra_data += [""] * len(field_defs[FrameType.SLOW])
 
             # add GPS frames the way blackbox-log-viewer seems to do it
             if FrameType.GPS in field_defs:
                 if last_gps:
-                    edata += list(last_gps.data[1:]) # skip time
+                    extra_data += list(last_gps.data[1:]) # skip time
                 else:
-                    edata += [""] * (len(field_defs[FrameType.GPS]) - 1)
+                    extra_data += [""] * (len(field_defs[FrameType.GPS]) - 1)
 
-            frame = Frame(ftype, frame.data + tuple(edata))
+            frame = Frame(ftype, frame.data + tuple(extra_data))
 
             try:
                 FrameType(chr(reader.value()))

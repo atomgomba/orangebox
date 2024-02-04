@@ -19,22 +19,22 @@ def compare(frame_index, parser, frame, csv_frame, show_all_fields):
         csv_value = _trycast(csv_frame[i])
 
         fdef = None
-        if (i < intra_inter_len):
+        if i < intra_inter_len:
             fdef = reader.field_defs[FrameType.INTER][i]
         else:
-            curMaxLen = intra_inter_len
+            cur_max_len = intra_inter_len
             if FrameType.SLOW in reader.field_defs:
                 slowLen = len(reader.field_defs[FrameType.SLOW])
-                if i < (curMaxLen + slowLen):
-                    fdef = reader.field_defs[FrameType.SLOW][i - curMaxLen]
+                if i < (cur_max_len + slowLen):
+                    fdef = reader.field_defs[FrameType.SLOW][i - cur_max_len]
                 else:
-                    curMaxLen += slowLen
+                    cur_max_len += slowLen
 
             if fdef is None and FrameType.GPS in reader.field_defs:
-                gpsLen = len(reader.field_defs[FrameType.GPS])
+                gps_len = len(reader.field_defs[FrameType.GPS])
                 # time is never actually written out, skip over it
-                if i < (curMaxLen + gpsLen - 1):
-                    fdef = reader.field_defs[FrameType.GPS][i+1 - curMaxLen]
+                if i < (cur_max_len + gps_len - 1):
+                    fdef = reader.field_defs[FrameType.GPS][i+1 - cur_max_len]
                 else:
                     raise IndexError(f"Somehow index {i} is higher than the number of field definitions")
 

@@ -66,14 +66,20 @@ def _increment(new: Number, ctx: Context) -> Number:
 
 @map_to(7, predictor_map)
 def _home_coord_0(new: Number, ctx: Context) -> Number:
-    # TODO: store GPS frame history
-    return ctx.last_gps_home_frame.data[0] + new if ctx.last_gps_home_frame.data else 0
+    if ctx.last_gps_home_frame.data:
+        result = ctx.last_gps_home_frame.data[0] + new
+    else:
+        result = 0
+    return result
 
 
 @map_to(256, predictor_map)
 def _home_coord_1(new: Number, ctx: Context) -> Number:
-    # TODO: store GPS frame history
-    return ctx.last_gps_home_frame.data[1] + new if ctx.last_gps_home_frame.data else 0
+    if ctx.last_gps_home_frame.data:
+        result = ctx.last_gps_home_frame.data[1] + new
+    else:
+        result = 0
+    return result
 
 
 # noinspection PyUnusedLocal
