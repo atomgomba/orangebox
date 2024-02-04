@@ -13,14 +13,31 @@ def compare(frame_index, parser, frame, csv_frame, show_all_fields):
     reader = parser.reader
     stats = []
     mismatched_num = 0
+    intra_inter_len = len(reader.field_defs[FrameType.INTER])
+
     for i, value in enumerate(frame.data):
         csv_value = _trycast(csv_frame[i])
-        try:
-            fdef = reader.field_defs[frame.type][i]
-        except IndexError:
-            # account for the different numbers of field defs
-            fdeflen = len(reader.field_defs[frame.type])
-            fdef = reader.field_defs[FrameType.SLOW][i - fdeflen]
+
+        fdef = None
+        if i < intra_inter_len:
+            fdef = reader.field_defs[FrameType.INTER][i]
+        else:
+            cur_max_len = intra_inter_len
+            if FrameType.SLOW in reader.field_defs:
+                slowLen = len(reader.field_defs[FrameType.SLOW])
+                if i < (cur_max_len + slowLen):
+                    fdef = reader.field_defs[FrameType.SLOW][i - cur_max_len]
+                else:
+                    cur_max_len += slowLen
+
+            if fdef is None and FrameType.GPS in reader.field_defs:
+                gps_len = len(reader.field_defs[FrameType.GPS])
+                # time is never actually written out, skip over it
+                if i < (cur_max_len + gps_len - 1):
+                    fdef = reader.field_defs[FrameType.GPS][i+1 - cur_max_len]
+                else:
+                    raise IndexError(f"Somehow index {i} is higher than the number of field definitions")
+
         if csv_value == value:
             if show_all_fields:
                 stats.append("  field #{:d} '{:s}' value: {} encoding: {:d} predictor: {:d}".format(

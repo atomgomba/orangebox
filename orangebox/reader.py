@@ -140,6 +140,9 @@ class Reader:
                     field_defs[frame_type] = [FieldDef(frame_type) for _ in range(len(header_value))]
                 prop = header_key.split(" ", 2)[-1]
                 for i, framedef_value in enumerate(header_value):
+                    fdef_name = field_defs[frame_type][i].name
+                    if fdef_name == "GPS_coord[1]" and framedef_value == 7:
+                        framedef_value = 256 # catch latitude
                     field_defs[frame_type][i].__dict__[prop] = framedef_value
                     if prop == "predictor":
                         if framedef_value not in predictors:
