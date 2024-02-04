@@ -57,8 +57,3 @@ Reference
     scripts
 
 * :ref:`genindex`
-
-TODO
-^^^^
-
-.. todolist::
