@@ -3,7 +3,11 @@
 Utility scripts
 ---------------
 
-The package ships with two command-line utility scripts. Every script (including `parser_test.py`) accepts `-v`, `-vv` and `-vvv` as a way to increase logging level.
+The package ships with some command-line utility scripts. Every script (including `parser_test.py`) accepts `-v`, `-vv` and `-vvv` as a way to increase logging level.
+
+* bb2csv - Blackbox log to CSV converter utility
+* bbsplit - Split logging sessions into separate files
+* bb2gpx - Convert blackbox log with GPS data to GPX
 
 `bb2csv`
 ^^^^^^^^
@@ -91,3 +95,27 @@ Help
       -o DIR, --output DIR  Optional path to output directory, defaults to parent directory of the original log file (default: None)
       -v                    Control verbosity (can be used multiple times) (default: 0)
       -n, --dry-run         Do not write anything (default: False)
+
+`bb2gpx`
+^^^^^^^^
+
+Convert blackbox log with GPS data to GPX. GPX is a standard XML-based data format for sharing GPS data. Such files can be opened by Google Earth and many other software.
+
+Help
+~~~~
+
+::
+
+    usage: bb2gpx [-h] [-o PATH] [-n NAME] [-i LOG_INDEX] [-v] path
+
+    positional arguments:
+      path                  Path to a blackbox log file
+
+    options:
+      -h, --help            show this help message and exit
+      -o PATH, --output PATH
+                            Optional path to an output file (otherwise use standard output) (default: None)
+      -n NAME, --name NAME  Name for the GPX document (default: Blackbox Log)
+      -i LOG_INDEX, --index LOG_INDEX
+                            Log index number or all if not specified (default) (default: 0)
+      -v                    Control verbosity (can be used multiple times) (default: 0)

@@ -55,6 +55,10 @@ parser.set_log_index(1)
 
 ## Changelog
 
+### 0.3.1
+
+* Add `bb2gpx` utility for converting GPS data into GPX
+
 ### 0.3.0
 
 * Add support for GPS frames (thanks to [@tblaha](https://github.com/tblaha)!)

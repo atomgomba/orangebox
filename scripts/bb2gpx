@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+# Orangebox - Cleanflight/Betaflight blackbox data parser.
+# Copyright (C) 2019  Károly Kiripolszky
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+from datetime import datetime
+import logging
+import math
+import sys
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from typing import Optional
+
+import orangebox
+from orangebox import Parser
+from orangebox.reader import Reader
+
+GPX_FILE_TEMPLATE = """
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.topografix.com/GPX/1/1" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.topografix.com/GPX/gpx_style/0/2 http://www.topografix.com/GPX/gpx_style/0/2/gpx_style.xsd" xmlns:gpx_style="http://www.topografix.com/GPX/gpx_style/0/2" 
+  version="1.1" 
+  creator="Orangebox {orangebox_version} - https://github.com/atomgomba/orangebox">
+  <metadata>
+    <name>{name}</name>
+    <time>{date_time}</time>
+  </metadata>
+  {tracks}
+</gpx>
+"""
+
+GPX_TRACK_TEMPLATE = """
+  <trk>
+    <src>{filename}</src>
+    <number>{index}</number>
+    <trkseg>
+{track_points}
+    </trkseg>
+  </trk>
+"""
+
+GPX_POINT_TEMPLATE = """
+<trkpt lat="{lat}" lon="{lon}"><ele>{alt}</ele><time>{date_time}</time></trkpt>
+"""
+
+
+def main(path: str, output: Optional[str], name: str, log_index: int):
+    reader = Reader(path, 1)
+    if not reader.headers:
+        raise RuntimeError("Invalid blackbox log file")
+
+    indices = []
+    if log_index == 0:
+        indices.extend(range(1, reader.log_count + 1))
+    else:
+        indices.append(log_index)
+
+    parser = Parser.load(path, 1)
+    time_index = parser.field_names.index("time")
+    lat_index = parser.field_names.index("GPS_coord[0]")
+    lon_index = parser.field_names.index("GPS_coord[1]")
+    alt_index = parser.field_names.index("GPS_altitude")
+
+    point_indent = "  " * 3
+    tracks = []
+    for current_log_index in indices:
+        if 1 < current_log_index:
+            parser = Parser.load(path, current_log_index)
+        points = []
+        for i, frame in enumerate(parser.frames()):
+            if not frame.data[lat_index]:
+                logging.warning(f"Skipped incomplete frame #{i}")
+                continue
+            time_value = math.floor(frame.data[time_index] / 1000)
+            lat_value = frame.data[lat_index] / 10000000
+            lon_value = frame.data[lon_index] / 10000000
+            alt_value = frame.data[alt_index] / 10
+            points.append(point_indent + GPX_POINT_TEMPLATE.strip()
+                .replace("{lat}", str(lat_value))
+                .replace("{lon}", str(lon_value))
+                .replace("{alt}", str(alt_value))
+                .replace("{date_time}", datetime.fromtimestamp(time_value).isoformat()))
+        tracks.append(GPX_TRACK_TEMPLATE.strip()
+            .replace("{filename}", path)
+            .replace("{index}", str(current_log_index))
+            .replace("{track_points}", "\n".join(points)))
+
+    doc = (GPX_FILE_TEMPLATE.strip()
+                .replace("{orangebox_version}", orangebox.__version__)
+                .replace("{name}", name)
+                .replace("{date_time}", datetime.utcnow().isoformat())
+                .replace("{tracks}", "\n".join(tracks)))
+    outf = open(output, "w") if output is not None else sys.stdout
+    with outf as f:
+        f.write(doc)
+    if output is not None:
+        logging.info(f"Written: {output}")
+
+
+if __name__ == "__main__":
+    # noinspection PyTypeChecker
+    argparser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+    argparser.add_argument("path", help="Path to a blackbox log file")
+    argparser.add_argument("-o", "--output", metavar="PATH", default=None,
+                           help="Optional path to an output file (otherwise use standard output)")
+    argparser.add_argument("-n", "--name", metavar="NAME", default="Blackbox Log",
+                           help="Name for the GPX document")
+    argparser.add_argument("-i", "--index", type=int, dest="log_index", default=0,
+                           help="Log index number or all if not specified (default)")
+    argparser.add_argument("-v", dest="verbosity", action="count", default=0,
+                           help="Control verbosity (can be used multiple times)")
+
+    args = argparser.parse_args()
+
+    levels = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
+    if args.verbosity >= len(levels):
+        raise IndexError("Verbosity must be 0 <= n < 4")
+    logging.basicConfig(level=levels[args.verbosity],
+                        format='%(asctime)s %(name)s %(levelname)s %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S')
+
+    main(args.path, args.output, args.name, args.log_index)
