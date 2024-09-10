@@ -17,6 +17,7 @@
 from typing import Dict
 
 from .context import Context
+from .defaults import HeaderDefaults
 from .tools import map_to
 from .types import FrameType, Number, Predictor
 
@@ -49,7 +50,7 @@ def _average2(new: Number, ctx: Context) -> Number:
 
 @map_to(4, predictor_map)
 def _minthrottle(new: Number, ctx: Context) -> Number:
-    return new + ctx.headers.get("minthrottle", 0)
+    return new + ctx.headers.get("minthrottle", HeaderDefaults.minthrottle)
 
 
 @map_to(5, predictor_map)
@@ -83,7 +84,7 @@ def _1500(new: Number, _: Context) -> Number:
 
 @map_to(9, predictor_map)
 def _vbatref(new: Number, ctx: Context) -> Number:
-    return new + ctx.headers.get("vbatref", 0)
+    return new + ctx.headers.get("vbatref", HeaderDefaults.vbatref)
 
 
 @map_to(10, predictor_map)
@@ -95,4 +96,4 @@ def _last_main_frame_time(new: Number, ctx: Context) -> Number:
 @map_to(11, predictor_map)
 def _minmotor(new: Number, ctx: Context) -> Number:
     # index 0 is the minimum motor output
-    return new + ctx.headers.get("motorOutput", [0])[0]
+    return new + ctx.headers.get("motorOutput", HeaderDefaults.motor_output)[0]

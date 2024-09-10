@@ -23,8 +23,8 @@ from typing import Optional
 from orangebox.reader import Reader
 
 
-def main(path: str, output_path: Optional[str], dry_run: bool):
-    reader = Reader(path, 1)
+def main(path: str, output_path: Optional[str], allow_invalid_header: bool, dry_run: bool):
+    reader = Reader(path, 1, allow_invalid_header)
     if not reader.headers:
         raise RuntimeError("Invalid blackbox log file")
 
@@ -61,6 +61,8 @@ if __name__ == "__main__":
     argparser.add_argument("path", help="Path to a blackbox log file")
     argparser.add_argument("-o", "--output", metavar="DIR", default=None,
                            help="Optional path to output directory, defaults to parent directory of the original log file")
+    argparser.add_argument("-a", "--allow-invalid-header", action="store_true",
+                           help="Allow skipping of badly formatted headers")
     argparser.add_argument("-v", dest="verbosity", action="count", default=0,
                            help="Control verbosity (can be used multiple times)")
     argparser.add_argument("-n", "--dry-run", action="store_true", help="Do not write anything")
@@ -74,4 +76,4 @@ if __name__ == "__main__":
                         format='%(asctime)s %(name)s %(levelname)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    main(args.path, args.output, args.dry_run)
+    main(args.path, args.output, args.allow_invalid_header, args.dry_run)

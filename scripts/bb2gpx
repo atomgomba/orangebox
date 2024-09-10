@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from datetime import datetime
+from datetime import datetime, UTC
 import logging
 import math
 import sys
@@ -54,7 +54,7 @@ GPX_POINT_TEMPLATE = """
 """
 
 
-def main(path: str, output: Optional[str], name: str, log_index: int):
+def main(path: str, output: Optional[str], name: str, log_index: int, allow_invalid_header: bool):
     reader = Reader(path, 1)
     if not reader.headers:
         raise RuntimeError("Invalid blackbox log file")
@@ -65,7 +65,7 @@ def main(path: str, output: Optional[str], name: str, log_index: int):
     else:
         indices.append(log_index)
 
-    parser = Parser.load(path, 1)
+    parser = Parser.load(path, 1, allow_invalid_header)
     time_index = parser.field_names.index("time")
     lat_index = parser.field_names.index("GPS_coord[0]")
     lon_index = parser.field_names.index("GPS_coord[1]")
@@ -75,7 +75,7 @@ def main(path: str, output: Optional[str], name: str, log_index: int):
     tracks = []
     for current_log_index in indices:
         if 1 < current_log_index:
-            parser = Parser.load(path, current_log_index)
+            parser = Parser.load(path, current_log_index, allow_invalid_header)
         points = []
         for i, frame in enumerate(parser.frames()):
             if not frame.data[lat_index]:
@@ -98,7 +98,7 @@ def main(path: str, output: Optional[str], name: str, log_index: int):
     doc = (GPX_FILE_TEMPLATE.strip()
                 .replace("{orangebox_version}", orangebox.__version__)
                 .replace("{name}", name)
-                .replace("{date_time}", datetime.utcnow().isoformat())
+                .replace("{date_time}", datetime.now(UTC).isoformat())
                 .replace("{tracks}", "\n".join(tracks)))
     outf = open(output, "w") if output is not None else sys.stdout
     with outf as f:
@@ -117,6 +117,8 @@ if __name__ == "__main__":
                            help="Name for the GPX document")
     argparser.add_argument("-i", "--index", type=int, dest="log_index", default=0,
                            help="Log index number or all if not specified (default)")
+    argparser.add_argument("-a", "--allow-invalid-header", action="store_true",
+                           help="Allow skipping of badly formatted headers")
     argparser.add_argument("-v", dest="verbosity", action="count", default=0,
                            help="Control verbosity (can be used multiple times)")
 
@@ -129,4 +131,4 @@ if __name__ == "__main__":
                         format='%(asctime)s %(name)s %(levelname)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    main(args.path, args.output, args.name, args.log_index)
+    main(args.path, args.output, args.name, args.log_index, args.allow_invalid_header)

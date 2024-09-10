@@ -71,14 +71,17 @@ class Parser:
                                             map(lambda x: x.name, reader.field_defs[ftype]))
 
     @staticmethod
-    def load(path: str, log_index: int = 1) -> "Parser":
+    def load(path: str,
+             log_index: int = 1,
+             allow_invalid_header: bool = False) -> "Parser":
         """Factory method to create a parser for a log file.
 
         :param path: Path to blackbox log file
         :param log_index: Index within log file (defaults to 1)
+        :param allow_invalid_header: Allow skipping of badly formatted headers
         :rtype: Parser
         """
-        return Parser(Reader(path, log_index))
+        return Parser(Reader(path, log_index, allow_invalid_header))
 
     def frames(self) -> Iterator[Frame]:
         """Return an iterator for the current frames.

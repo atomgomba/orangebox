@@ -18,8 +18,10 @@ import logging
 from typing import BinaryIO, Dict, Iterator, List, Optional
 
 from .decoders import decoder_map
+from .defaults import HeaderDefaults
+from .errors import InvalidHeaderException
 from .predictors import predictor_map
-from .tools import _trycast
+from .tools import _is_ascii, _trycast
 from .types import FieldDef, FrameType, Headers
 
 MAX_FRAME_SIZE = 256
@@ -34,7 +36,10 @@ class Reader:
     .. todo:: Detecting and informing the user about possible file corruption (missing headers, etc.)
     """
 
-    def __init__(self, path: str, log_index: Optional[int] = None):
+    def __init__(self,
+                 path: str,
+                 log_index: Optional[int] = None,
+                 allow_invalid_header: bool = False):
         """
         :param path: Path to a log file
         :param log_index: Session index within log file. If set to `None` (the default) there will be no session selected and headers and frame data won't be read until the first call to `.set_log_index()`.
@@ -49,6 +54,7 @@ class Reader:
         self._log_pointers = []  # type: List[int]
         self._frame_data = b''
         self._frame_data_len = 0
+        self._allow_invalid_header = allow_invalid_header
         with open(path, "rb") as f:
             if not f.seekable():
                 msg = "Input file must be seekable"
@@ -86,7 +92,7 @@ class Reader:
     def _update_headers(self, f: BinaryIO):
         start = f.tell()
         while True:
-            line = f.readline()
+            line = self._read_header_line(f)
             if not line:
                 # nothing left to read
                 break
@@ -95,19 +101,39 @@ class Reader:
                 f.seek(-len(line), 1)
                 _log.debug(
                     "End of headers at {0:d} (0x{0:X}) (headers: {1:d})".format(f.tell(), len(self._headers.keys())))
+                HeaderDefaults.inspect(self._headers)
                 break
         self._header_size = f.tell() - start
 
-    def _parse_header_line(self, data: bytes) -> bool:
-        """Parse a header line and return its resulting character length.
+    def _read_header_line(self, f: BinaryIO) -> bytes:
+        """Read the next header line up to a linefeed or invalid character.
+        """
+        result = bytes()
+        while True:
+            byte = f.read(1)
+            if not byte or byte == b'\n':
+                break
+            elif not _is_ascii(byte):
+                if self._allow_invalid_header:
+                    _log.warning(f"Invalid byte in header: {byte} (read: {result})")
+                    break
+                else:
+                    raise InvalidHeaderException(result)
+            result += byte
+        return result
 
-        Return None if the line cannot be parsed.
+    def _parse_header_line(self, data: bytes) -> bool:
+        """Parse a header line and return `False` if it's invalid.
         """
         if data[0] != 72:  # 72 == ord('H')
             # not a header line
             return False
         line = data.decode().replace("H ", "", 1)
-        name, value = line.split(':', 1)
+        try:
+            name, value = line.split(':', 1)
+        except ValueError:
+            _log.warning(f"Header line has invalid format: '{line}'")
+            return False
         self._headers[name.strip()] = [_trycast(s.strip()) for s in value.split(',')] if ',' in value \
             else _trycast(value.strip())
         return True
@@ -157,7 +183,7 @@ class Reader:
                             if decoder.__name__.endswith("_versioned"):
                                 # short circuit calls to versioned decoders
                                 # noinspection PyArgumentList
-                                decoder = decoder(headers.get("Data version"))
+                                decoder = decoder(headers.get("Data version", HeaderDefaults.data_version))
                             field_defs[frame_type][i].decoderfun = decoder
         if FrameType.INTER not in field_defs:
             # partial or missing header information

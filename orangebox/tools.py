@@ -17,7 +17,7 @@
 from struct import pack, unpack
 from typing import Any, Callable, Union
 
-from orangebox.types import Number
+from .types import Number
 
 
 def map_to(key: Any, amap: dict) -> Callable:
@@ -80,3 +80,12 @@ def _trycast(s: str) -> Union[Number, str]:
             return float(s)
         except ValueError:
             return s
+
+
+def _is_ascii(s: bytes) -> bool:
+    try:
+        s.decode('ascii')
+    except UnicodeDecodeError:
+        return False
+    else:
+        return True

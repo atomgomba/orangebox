@@ -24,9 +24,9 @@ from typing import Optional
 from orangebox import Parser
 
 
-def main(path: str, output: Optional[str], log_index: int):
+def main(path: str, output: Optional[str], log_index: int, allow_invalid_header: bool):
     output = open(output, "w") if output is not None else sys.stdout
-    parser = Parser.load(path, log_index)
+    parser = Parser.load(path, log_index, allow_invalid_header)
     with output as f:
         writer = csv.writer(f)
         writer.writerow(parser.field_names)
@@ -42,6 +42,8 @@ if __name__ == "__main__":
                            help="Optional path to an output file (otherwise use standard output)")
     argparser.add_argument("-i", "--index", type=int, dest="log_index", default=1,
                            help="Log index number (In case of merged input)")
+    argparser.add_argument("-a", "--allow-invalid-header", action="store_true",
+                           help="Allow skipping of badly formatted headers")
     argparser.add_argument("-v", dest="verbosity", action="count", default=0,
                            help="Control verbosity (can be used multiple times)")
 
@@ -54,4 +56,4 @@ if __name__ == "__main__":
                         format='%(asctime)s %(name)s %(levelname)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    main(args.path, args.output, args.log_index)
+    main(args.path, args.output, args.log_index, args.allow_invalid_header)

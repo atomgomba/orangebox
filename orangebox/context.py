@@ -16,6 +16,7 @@
 
 from typing import Dict, Optional, Tuple, Union
 
+from .defaults import HeaderDefaults
 from .types import FieldDefs, Frame, FrameType, Headers, Number
 
 
@@ -25,7 +26,7 @@ class Context:
 
     def __init__(self, headers: Headers, field_defs: FieldDefs):
         self.headers = headers  # type: Headers
-        self.data_version = headers.get("Data version", 1)  # type: int
+        self.data_version = headers.get("Data version", HeaderDefaults.data_version)  # type: int
         self.field_defs = field_defs  # type: FieldDefs
         self.field_def_counts = {k: len(v) for k, v in field_defs.items()}  # type: Dict[FrameType, int]
         self.frame_count = 0  # count of parsed frames
@@ -47,12 +48,12 @@ class Context:
                     self._names_to_indices[ftype][fdef.name] = i
         self.read_frame_count = 0  # count of all frames been read
         self.invalid_frame_count = 0  # count of invalid frames
-        self.i_interval = self.headers.get("I interval", 1)  # type: int
+        self.i_interval = self.headers.get("I interval", HeaderDefaults.i_interval)  # type: int
         self.skipped_frames = 0
         if self.i_interval < 1:
             self.i_interval = 1
         # determine logging frequency (interval of INTRA frames)
-        p_interval = self.headers.get("P interval", 0)  # type: Union[int, str]
+        p_interval = self.headers.get("P interval", HeaderDefaults.p_interval)  # type: Union[int, str]
         if isinstance(p_interval, int):
             self.p_interval_num = 1
             self.p_interval_denom = p_interval
