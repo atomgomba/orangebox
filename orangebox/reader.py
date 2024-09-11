@@ -32,8 +32,6 @@ _log = logging.getLogger(__name__)
 class Reader:
     """Implements a file-like object for reading a flight log and store the raw data in a structured way. Does not do
     any real parsing, the iterator just yields bytes.
-
-    .. todo:: Detecting and informing the user about possible file corruption (missing headers, etc.)
     """
 
     def __init__(self,
