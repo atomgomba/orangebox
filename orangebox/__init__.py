@@ -15,5 +15,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from .parser import Parser
+from .errors import InvalidHeaderException
 
 __version__ = "0.4.0"

@@ -21,12 +21,17 @@ import sys
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from typing import Optional
 
-from orangebox import Parser
+from orangebox import InvalidHeaderException, Parser
 
 
 def main(path: str, output: Optional[str], log_index: int, allow_invalid_header: bool):
     output = open(output, "w") if output is not None else sys.stdout
-    parser = Parser.load(path, log_index, allow_invalid_header)
+    parser = None
+    try:
+        parser = Parser.load(path, log_index, allow_invalid_header)
+    except InvalidHeaderException as e:
+        print(str(e))
+        exit(1)
     with output as f:
         writer = csv.writer(f)
         writer.writerow(parser.field_names)
