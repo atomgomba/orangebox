@@ -43,6 +43,7 @@ class Reader:
         """
         :param path: Path to a log file
         :param log_index: Session index within log file. If set to `None` (the default) there will be no session selected and headers and frame data won't be read until the first call to `.set_log_index()`.
+        :param allow_invalid_header: Allow skipping of badly formatted headers
         """
         self._headers = {}  # type: Headers
         self._field_defs = {}  # type: Dict[FrameType, List[FieldDef]]

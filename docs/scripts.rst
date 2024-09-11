@@ -44,6 +44,8 @@ Help
                             Optional path to an output file (otherwise use standard output) (default: None)
       -i LOG_INDEX, --index LOG_INDEX
                             Log index number (In case of merged input) (default: 1)
+      -a, --allow-invalid-header
+                            Allow skipping of badly formatted headers (default: False)
       -v                    Control verbosity (can be used multiple times) (default: 0)
 
 `bbsplit`
@@ -93,6 +95,8 @@ Help
     optional arguments:
       -h, --help            show this help message and exit
       -o DIR, --output DIR  Optional path to output directory, defaults to parent directory of the original log file (default: None)
+      -a, --allow-invalid-header
+                            Allow skipping of badly formatted headers (default: False)
       -v                    Control verbosity (can be used multiple times) (default: 0)
       -n, --dry-run         Do not write anything (default: False)
 
@@ -118,4 +122,6 @@ Help
       -n NAME, --name NAME  Name for the GPX document (default: Blackbox Log)
       -i LOG_INDEX, --index LOG_INDEX
                             Log index number or all if not specified (default) (default: 0)
+      -a, --allow-invalid-header
+                            Allow skipping of badly formatted headers (default: False)
       -v                    Control verbosity (can be used multiple times) (default: 0)
