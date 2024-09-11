@@ -112,16 +112,17 @@ class Reader:
         result = bytes()
         while True:
             byte = f.read(1)
-            if not byte or byte == b'\n':
-                break
-            elif not _is_ascii(byte):
+            if not byte:
+                return result
+            elif byte == b'\n':
+                return result + b'\n'
+            elif not _is_ascii(byte) and result.startswith(b'H'):
                 if self._allow_invalid_header:
                     _log.warning(f"Invalid byte in header: {byte} (read: {result})")
-                    break
+                    return bytes()
                 else:
-                    raise InvalidHeaderException(result)
+                    raise InvalidHeaderException(result, f.tell())
             result += byte
-        return result
 
     def _parse_header_line(self, data: bytes) -> bool:
         """Parse a header line and return `False` if it's invalid.

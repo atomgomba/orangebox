@@ -15,6 +15,5 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 class InvalidHeaderException(Exception):
-    def __init__(self, data: bytes):
-        super().__init__(f"Invalid header: {data}")
-        self.valid_length = len(data)
+    def __init__(self, data: bytes, position: int):
+        super().__init__(f"Invalid header at 0x{position:X}: {data}")
