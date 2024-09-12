@@ -2,6 +2,7 @@
 import csv
 import logging
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from types import TracebackType
 
 from orangebox import Parser
 # noinspection PyProtectedMember
@@ -55,7 +56,7 @@ def compare(frame_index, parser, frame, csv_frame, show_all_fields):
 
 
 def main(path: str, csv_path: str, show_all_fields: bool, log_index: int):
-    parser = Parser.load(path, log_index=log_index)
+    parser = Parser.load(path, log_index=log_index, allow_invalid_header=True)
     csv_frames = []
     for i, row in enumerate(csv.reader(open(csv_path))):
         if len(row) == 2:
@@ -63,8 +64,11 @@ def main(path: str, csv_path: str, show_all_fields: bool, log_index: int):
             continue
         csv_frames.append(row)
     for i, frame in enumerate(parser.frames()):
-        # add i + 1 to skip field headers in CSV
-        compare(frame.data[0], parser, frame, csv_frames[i + 1], show_all_fields)
+        try:
+            # add i + 1 to skip field headers in CSV
+            compare(frame.data[0], parser, frame, csv_frames[i + 1], show_all_fields)
+        except Exception as e:
+            print(f"Error at frame #{frame.data[0]}", str(e))
 
 
 if __name__ == "__main__":
