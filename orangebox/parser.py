@@ -118,7 +118,7 @@ class Parser:
                 ctx.read_frame_count += 1
                 if self._end_of_log:
                     _log.info(
-                        "Frames: total: {total:d}, parsed: {parsed:d}, skipped: {skipped:d} invalid: {invalid:d} ({invalid_percent:.2f}%)"
+                        "Frames: total: {total:d}, parsed: {parsed:d}, skipped: {skipped:d} ({skipped_percent:.2f}%), invalid: {invalid:d} ({invalid_percent:.2f}%)"
                         .format(**ctx.stats))
                     break
                 continue
