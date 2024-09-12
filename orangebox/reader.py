@@ -92,19 +92,15 @@ class Reader:
         start = f.tell()
         while True:
             line = self._read_header_line(f)
-            if not line:
-                # nothing left to read
-                break
             has_next = self._parse_header_line(line)
             if not has_next:
-                f.seek(-len(line), 1)
                 _log.debug(
                     "End of headers at {0:d} (0x{0:X}) (headers: {1:d})".format(f.tell(), len(self._headers.keys())))
                 HeaderDefaults.inspect(self._headers)
                 break
         self._header_size = f.tell() - start
 
-    def _read_header_line(self, f: BinaryIO) -> bytes:
+    def _read_header_line(self, f: BinaryIO) -> Optional[bytes]:
         """Read the next header line up to a linefeed or invalid character.
         """
         result = bytes()
@@ -112,20 +108,25 @@ class Reader:
             byte = f.read(1)
             if not byte:
                 return result
+            elif byte == b'I' and len(result) == 0:
+                f.seek(-1, 1)
+                return None
             elif byte == b'\n':
                 return result + b'\n'
             elif not _is_ascii(byte) and result.startswith(b'H'):
                 if self._allow_invalid_header:
                     _log.warning(f"Invalid byte in header: {byte} (read: {result})")
-                    return bytes()
+                    invalid_part = len(result) - result.find(b'I') + 1
+                    f.seek(-invalid_part, 1)
+                    return None
                 else:
                     raise InvalidHeaderException(result, f.tell())
             result += byte
 
-    def _parse_header_line(self, data: bytes) -> bool:
+    def _parse_header_line(self, data: Optional[bytes]) -> bool:
         """Parse a header line and return `False` if it's invalid.
         """
-        if data[0] != 72:  # 72 == ord('H')
+        if not data or data[0] != 72:  # 72 == ord('H')
             # not a header line
             return False
         line = data.decode().replace("H ", "", 1)
