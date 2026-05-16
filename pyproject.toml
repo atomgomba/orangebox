@@ -4,6 +4,34 @@ version = "0.5.0"
 description = "A Cleanflight/Betaflight blackbox log parser written in Python 3"
 readme = "README.md"
 requires-python = ">=3.6"
+license = "GPL-3.0"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Károly Kiripolszky", email = "karcsi@ekezet.com" },
+]
+keywords = [
+    "betaflight",
+    "blackbox",
+    "cleanflight",
+    "inav",
+    "rotorflight",
+]
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: System :: Archiving :: Compression",
+]
+
+[project.scripts]
+bb2csv = "scripts/bb2csv"
+bb2gpx = "scripts/bb2gpx"
+bbsplit = "scripts/bbsplit"
+
+[project.urls]
+"Bug Tracker" = "https://github.com/atomgomba/orangebox/issues"
+"Source Code" = "https://github.com/atomgomba/orangebox"
 
 [dependency-groups]
 dev = [
@@ -13,3 +41,7 @@ dev = [
 [tool.ruff]
 lint.ignore = []
 line-length = 160
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
