@@ -98,6 +98,10 @@ class Parser:
         last_frame_pos = 0
         last_frame_is_corrupt = False
         for byte in reader:
+            if byte is None:
+                _log.warning("Unexpected end of log")
+                break
+
             try:
                 ftype = FrameType(chr(byte))
             except ValueError:
@@ -149,7 +153,7 @@ class Parser:
             # validate frame
             current_time = ctx.get_current_value_by_name(ftype, "time")
             if last_time is not None and last_time >= current_time and MAX_TIME_JUMP < current_time - last_time:
-                _log.debug("Invalid {:s} Frame #{:d} due to time desync".format(ftype.value, ctx.read_frame_count + 1))
+                _log.debug("Invalid {:s} Frame #{:d} due to time desync ({:d}, {:d})".format(ftype.value, ctx.read_frame_count + 1, last_time, current_time))
                 last_time = current_time
                 ctx.read_frame_count += 1
                 ctx.invalid_frame_count += 1
@@ -158,7 +162,7 @@ class Parser:
             current_iter = ctx.get_current_value_by_name(ftype, "loopIteration")
             ctx.last_iter = current_iter
             if last_iter >= current_iter and MAX_ITER_JUMP < current_iter + last_iter:
-                _log.debug("Skipping {:s} Frame #{:d} due to iter desync".format(ftype.value, ctx.read_frame_count + 1))
+                _log.debug("Skipping {:s} Frame #{:d} due to iter desync ({:d}, {:d})".format(ftype.value, ctx.read_frame_count + 1, last_iter, current_iter))
                 last_iter = current_iter
                 ctx.read_frame_count += 1
                 ctx.invalid_frame_count += 1
@@ -188,10 +192,11 @@ class Parser:
             try:
                 FrameType(chr(reader.value()))
             except ValueError:
-                _log.debug("Dropping {:s} Frame #{:d} because it's corrupt"
-                           .format(ftype.value, ctx.read_frame_count + 1))
+                _log.debug("Dropping {:s} Frame #{:d} because it's corrupt at offset 0x{:X}"
+                           .format(ftype.value, ctx.read_frame_count + 1, reader.tell()))
                 ctx.invalid_frame_count += 1
                 continue
+
             ctx.read_frame_count += 1
             ctx.add_frame(frame)
             yield frame
@@ -231,7 +236,7 @@ class Parser:
         _log.debug("New event frame #{:d}: {:s}".format(self._ctx.read_frame_count + 1, event_type.name))
         parser = event_map[event_type]  # type: EventParser
         event_data = parser(reader)
-        self.events.append(Event(event_type, event_data))
+        self._events.append(Event(event_type, event_data))
         if event_type == EventType.LOG_END:
             self._end_of_log = True
         return True
@@ -268,3 +273,11 @@ class Parser:
         :type: Reader
         """
         return self._reader
+
+    @property
+    def home_coords(self) -> Optional[tuple]:
+        """Home coordinates from last GPS_HOME event"""
+        if self._ctx.last_gps_home_frame is not None:
+            data = self._ctx.last_gps_home_frame.data
+            return data[0], data[1]
+        return None
