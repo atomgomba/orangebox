@@ -99,8 +99,7 @@ class Parser:
         last_frame_is_corrupt = False
         for byte in reader:
             if byte is None:
-                _log.warning("Unexpected end of log")
-                break
+                raise RuntimeError("Unexpected end of log at offset 0x{:X} (frame: {:d})".format(reader.tell(), ctx.read_frame_count))
 
             try:
                 ftype = FrameType(chr(byte))
