@@ -167,15 +167,16 @@ class Reader:
                     field_defs[frame_type] = [FieldDef(frame_type) for _ in range(len(header_value))]
                 prop = header_key.split(" ", 2)[-1]
                 for i, framedef_value in enumerate(header_value):
-                    fdef_name = field_defs[frame_type][i].name
+                    fdef = field_defs[frame_type][i]  # type: FieldDef
+                    fdef_name = fdef.name
                     if fdef_name == "GPS_coord[1]" and framedef_value == 7:
                         framedef_value = 256  # catch latitude
-                    field_defs[frame_type][i].__dict__[prop] = framedef_value
+                    fdef.__dict__[prop] = framedef_value
                     if prop == "predictor":
                         if framedef_value not in predictors:
                             raise RuntimeError("No predictor found for {:d}".format(framedef_value))
                         else:
-                            field_defs[frame_type][i].predictorfun = predictors[framedef_value]
+                            fdef.predictorfun = predictors[framedef_value]
                     elif prop == "encoding":
                         if framedef_value not in decoders:
                             raise RuntimeError("No decoder found for {:d}".format(framedef_value))
@@ -185,7 +186,7 @@ class Reader:
                                 # short circuit calls to versioned decoders
                                 # noinspection PyArgumentList
                                 decoder = decoder(headers.get("Data version", HeaderDefaults.data_version))
-                            field_defs[frame_type][i].decoderfun = decoder
+                            fdef.decoderfun = decoder
         if FrameType.INTER not in field_defs:
             # partial or missing header information
             return
