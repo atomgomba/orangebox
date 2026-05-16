@@ -20,5 +20,5 @@ setup(
         "Topic :: Scientific/Engineering :: Information Analysis",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     ],
-    python_requires=">=3.5"
+    python_requires=">=3.5",
 )

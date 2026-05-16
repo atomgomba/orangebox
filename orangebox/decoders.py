@@ -17,8 +17,7 @@
 from typing import Dict, Iterator, Optional
 
 from .context import Context
-from .tools import map_to, sign_extend_14bit, sign_extend_16bit, sign_extend_24bit, sign_extend_2bit, sign_extend_4bit, \
-    sign_extend_6bit, sign_extend_8bit
+from .tools import map_to, sign_extend_14bit, sign_extend_16bit, sign_extend_24bit, sign_extend_2bit, sign_extend_4bit, sign_extend_6bit, sign_extend_8bit
 from .types import DecodedValue, Decoder
 
 decoder_map = dict()  # type: Dict[int, Decoder]
@@ -58,7 +57,7 @@ def _tag8_8svb(data: Iterator[int], ctx: Optional[Context] = None) -> DecodedVal
     fdeflen = ctx.field_def_counts[ctx.frame_type]
     for i in range(ctx.field_index + 1, ctx.field_index + 8):
         if i == fdeflen:
-            group_count = (fdeflen-1) - ctx.field_index
+            group_count = (fdeflen - 1) - ctx.field_index
             break
         if ctx.field_defs[ctx.frame_type][i].encoding != 6:
             group_count = i - ctx.field_index

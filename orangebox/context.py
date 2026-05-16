@@ -21,8 +21,7 @@ from .types import FieldDefs, Frame, FrameType, Headers, Number
 
 
 class Context:
-    """Used to keep track of parsing info for field predictors and decoders.
-    """
+    """Used to keep track of parsing info for field predictors and decoders."""
 
     def __init__(self, headers: Headers, field_defs: FieldDefs):
         self.headers = headers  # type: Headers
@@ -32,12 +31,9 @@ class Context:
         self.frame_count = 0  # count of parsed frames
         self.frame_type = None  # type: Optional[FrameType]
         self.field_index = 0  # index of current field
-        self.past_frames = (
-            Frame(FrameType.INTRA, b''),
-            Frame(FrameType.INTRA, b''),
-            Frame(FrameType.INTRA, b''))  # type: Tuple[Frame, Frame, Frame]
-        self.last_gps_frame = Frame(FrameType.GPS, b'')
-        self.last_gps_home_frame = Frame(FrameType.GPS_HOME, b'')
+        self.past_frames = (Frame(FrameType.INTRA, b""), Frame(FrameType.INTRA, b""), Frame(FrameType.INTRA, b""))  # type: Tuple[Frame, Frame, Frame]
+        self.last_gps_frame = Frame(FrameType.GPS, b"")
+        self.last_gps_home_frame = Frame(FrameType.GPS_HOME, b"")
         self.current_frame = tuple()  # the current (possibly yet incomplete) frame
         self.last_iter = -1
         self._names_to_indices = dict()  # type: Dict[FrameType, Dict[str, int]]
@@ -58,7 +54,7 @@ class Context:
             self.p_interval_num = 1
             self.p_interval_denom = p_interval
         else:
-            num, denom = p_interval.split('/')
+            num, denom = p_interval.split("/")
             self.p_interval_num = int(num)
             self.p_interval_denom = int(denom)
 
@@ -80,18 +76,14 @@ class Context:
         except (KeyError, IndexError):
             return default
 
-    def get_current_value_by_name(self,
-                                  frame_type: FrameType,
-                                  field_name: str,
-                                  default: Number = 0) -> Number:
+    def get_current_value_by_name(self, frame_type: FrameType, field_name: str, default: Number = 0) -> Number:
         try:
             return self.current_frame[self._names_to_indices[frame_type][field_name]]
         except (KeyError, IndexError):
             return default
 
     def should_have_frame_at(self, index: int) -> bool:
-        return (index % self.i_interval + self.p_interval_num - 1) % \
-               self.p_interval_denom < self.p_interval_num
+        return (index % self.i_interval + self.p_interval_num - 1) % self.p_interval_denom < self.p_interval_num
 
     def count_skipped_frames(self) -> int:
         if self.last_iter == -1:

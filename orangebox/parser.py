@@ -29,8 +29,7 @@ _log = logging.getLogger(__name__)
 
 
 class Parser:
-    """Parse and iterate over decoded frames.
-    """
+    """Parse and iterate over decoded frames."""
 
     def __init__(self, reader: Reader):
         """
@@ -67,13 +66,10 @@ class Parser:
             # Note 2: GPS_home is not written out by the blackbox-log-viewer (but added as offset to GPS_coord)
             # Note 3: GPS mysteriously contains a "time" field. This is correctly skipped by the filter below
             if ftype in reader.field_defs:
-                self._field_names += filter(lambda x: x is not None and x not in self._field_names,
-                                            map(lambda x: x.name, reader.field_defs[ftype]))
+                self._field_names += filter(lambda x: x is not None and x not in self._field_names, map(lambda x: x.name, reader.field_defs[ftype]))
 
     @staticmethod
-    def load(path: str,
-             log_index: int = 1,
-             allow_invalid_header: bool = False) -> "Parser":
+    def load(path: str, log_index: int = 1, allow_invalid_header: bool = False) -> "Parser":
         """Factory method to create a parser for a log file.
 
         :param path: Path to blackbox log file
@@ -121,8 +117,10 @@ class Parser:
                 ctx.read_frame_count += 1
                 if self._end_of_log:
                     _log.info(
-                        "Frames: total: {total:d}, parsed: {parsed:d}, skipped: {skipped:d} ({skipped_percent:.2f}%), invalid: {invalid:d} ({invalid_percent:.2f}%)"
-                        .format(**ctx.stats))
+                        "Frames: total: {total:d}, parsed: {parsed:d}, skipped: {skipped:d} ({skipped_percent:.2f}%), invalid: {invalid:d} ({invalid_percent:.2f}%)".format(
+                            **ctx.stats
+                        )
+                    )
                     break
                 continue
 
@@ -191,8 +189,7 @@ class Parser:
             try:
                 FrameType(chr(reader.value()))
             except ValueError:
-                _log.debug("Dropping {:s} Frame #{:d} because it's corrupt at offset 0x{:X}"
-                           .format(ftype.value, ctx.read_frame_count + 1, reader.tell()))
+                _log.debug("Dropping {:s} Frame #{:d} because it's corrupt at offset 0x{:X}".format(ftype.value, ctx.read_frame_count + 1, reader.tell()))
                 ctx.invalid_frame_count += 1
                 continue
 

@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
 class InvalidHeaderException(Exception):
     def __init__(self, data: bytes, position: int):
         super().__init__(f"Invalid header at 0x{position:X}: {data}")

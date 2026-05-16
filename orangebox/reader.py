@@ -34,10 +34,7 @@ class Reader:
     any real parsing, the iterator just yields bytes.
     """
 
-    def __init__(self,
-                 path: str,
-                 log_index: Optional[int] = None,
-                 allow_invalid_header: bool = False):
+    def __init__(self, path: str, log_index: Optional[int] = None, allow_invalid_header: bool = False):
         """
         :param path: Path to a log file
         :param log_index: Session index within log file. If set to `None` (the default) there will be no session selected and headers and frame data won't be read until the first call to `.set_log_index()`.
@@ -51,7 +48,7 @@ class Reader:
         _log.info("Processing: " + path)
         self._frame_data_ptr = 0
         self._log_pointers = []  # type: List[int]
-        self._frame_data = b''
+        self._frame_data = b""
         self._frame_data_len = 0
         self._allow_invalid_header = allow_invalid_header
         with open(path, "rb") as f:
@@ -85,8 +82,7 @@ class Reader:
         self._frame_data_ptr = 0
         self._frame_data_len = len(self._frame_data)
         self._build_field_defs()
-        _log.info("Log #{:d} out of {:d} (start: 0x{:X}, size: {:d})"
-                  .format(self._log_index, self.log_count, start, self._frame_data_len))
+        _log.info("Log #{:d} out of {:d} (start: 0x{:X}, size: {:d})".format(self._log_index, self.log_count, start, self._frame_data_len))
 
     def _update_headers(self, f: BinaryIO):
         start = f.tell()
@@ -94,29 +90,27 @@ class Reader:
             line = self._read_header_line(f)
             has_next = self._parse_header_line(line)
             if not has_next:
-                _log.debug(
-                    "End of headers at {0:d} (0x{0:X}) (headers: {1:d})".format(f.tell(), len(self._headers.keys())))
+                _log.debug("End of headers at {0:d} (0x{0:X}) (headers: {1:d})".format(f.tell(), len(self._headers.keys())))
                 HeaderDefaults.inspect(self._headers)
                 break
         self._header_size = f.tell() - start
 
     def _read_header_line(self, f: BinaryIO) -> Optional[bytes]:
-        """Read the next header line up to a linefeed or invalid character.
-        """
+        """Read the next header line up to a linefeed or invalid character."""
         result = bytes()
         while True:
             byte = f.read(1)
             if not byte:
                 return result
-            elif byte == b'I' and len(result) == 0:
+            elif byte == b"I" and len(result) == 0:
                 f.seek(-1, 1)
                 return None
-            elif byte == b'\n':
-                return result + b'\n'
-            elif not _is_ascii(byte) and result.startswith(b'H'):
+            elif byte == b"\n":
+                return result + b"\n"
+            elif not _is_ascii(byte) and result.startswith(b"H"):
                 if self._allow_invalid_header:
                     _log.warning(f"Invalid byte in header: {byte} (read: {result})")
-                    invalid_part = len(result) - result.find(b'I') + 1
+                    invalid_part = len(result) - result.find(b"I") + 1
                     f.seek(-invalid_part, 1)
                     return None
                 else:
@@ -124,19 +118,17 @@ class Reader:
             result += byte
 
     def _parse_header_line(self, data: Optional[bytes]) -> bool:
-        """Parse a header line and return `False` if it's invalid.
-        """
+        """Parse a header line and return `False` if it's invalid."""
         if not data or data[0] != 72:  # 72 == ord('H')
             # not a header line
             return False
         line = data.decode().replace("H ", "", 1)
         try:
-            name, value = line.split(':', 1)
+            name, value = line.split(":", 1)
         except ValueError:
             _log.warning(f"Header line has invalid format: '{line}'")
             return False
-        self._headers[name.strip()] = [_trycast(s.strip()) for s in value.split(',')] if ',' in value \
-            else _trycast(value.strip())
+        self._headers[name.strip()] = [_trycast(s.strip()) for s in value.split(",")] if "," in value else _trycast(value.strip())
         return True
 
     def _find_pointers(self, f: BinaryIO):
@@ -151,8 +143,7 @@ class Reader:
             new_index = content.find(first_line, new_index + step + 1)
 
     def _build_field_defs(self):
-        """Use the read headers to populate the `field_defs` property.
-        """
+        """Use the read headers to populate the `field_defs` property."""
         headers = self._headers
         field_defs = self._field_defs
         predictors = predictor_map
@@ -235,23 +226,19 @@ class Reader:
         return dict(self._field_defs)
 
     def value(self) -> int:
-        """Get current byte value.
-        """
+        """Get current byte value."""
         return self._frame_data[self._frame_data_ptr]
 
     def has_subsequent(self, data: bytes) -> bool:
-        """Return `True` if upcoming bytes equal ``data``.
-        """
-        return self._frame_data[self._frame_data_ptr:self._frame_data_ptr + len(data)] == data
+        """Return `True` if upcoming bytes equal ``data``."""
+        return self._frame_data[self._frame_data_ptr : self._frame_data_ptr + len(data)] == data
 
     def tell(self) -> int:
-        """IO protocol
-        """
+        """IO protocol"""
         return self._frame_data_ptr
 
     def seek(self, n: int):
-        """IO protocol
-        """
+        """IO protocol"""
         self._frame_data_ptr = n
 
     def __iter__(self) -> Iterator[Optional[int]]:

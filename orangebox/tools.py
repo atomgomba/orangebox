@@ -29,7 +29,7 @@ def map_to(key: Any, amap: dict) -> Callable:
 
 
 def toint32(word):
-    return unpack('i', pack('I', word))[0]
+    return unpack("i", pack("I", word))[0]
 
 
 def sign_extend_24bit(bits):
@@ -69,8 +69,7 @@ def sign_extend_2bit(byte) -> int:
 
 
 def _trycast(s: str) -> Union[Number, str]:
-    """Try to cast a string to the most appropriate numeric type.
-    """
+    """Try to cast a string to the most appropriate numeric type."""
     if s.startswith("0x"):
         return int(s, 16)
     try:
@@ -84,7 +83,7 @@ def _trycast(s: str) -> Union[Number, str]:
 
 def _is_ascii(s: bytes) -> bool:
     try:
-        s.decode('ascii')
+        s.decode("ascii")
     except UnicodeDecodeError:
         return False
     else:

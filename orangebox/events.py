@@ -22,14 +22,16 @@ from .reader import Reader
 from .tools import map_to
 from .types import EventParser, EventType
 
-END_OF_LOG_MESSAGE = b'End of log'
+END_OF_LOG_MESSAGE = b"End of log"
 
 event_map = dict()  # type: Dict[EventType, EventParser]
 
 
 @map_to(EventType.SYNC_BEEP, event_map)
 def sync_beep(data: Reader) -> Optional[dict]:
-    return {"time": _unsigned_vb(data), }
+    return {
+        "time": _unsigned_vb(data),
+    }
 
 
 @map_to(EventType.FLIGHT_MODE, event_map)
@@ -72,7 +74,9 @@ def custom_blank(_: Reader) -> Optional[dict]:
 
 @map_to(EventType.IMU_FAILURE, event_map)
 def imu_failure(data: Reader) -> Optional[dict]:
-    return {"code": _unsigned_vb(data), }
+    return {
+        "code": _unsigned_vb(data),
+    }
 
 
 @map_to(EventType.INFLIGHT_ADJUSTMENT, event_map)
@@ -83,7 +87,7 @@ def inflight_adjustment(data: Reader) -> Optional[dict]:
         # read float32
         for i in range(4):
             value |= next(data) << (i * 8)
-        value = struct.unpack('<f', value.to_bytes(4, 'little'))[0]
+        value = struct.unpack("<f", value.to_bytes(4, "little"))[0]
     else:
         value = _signed_vb(data)
     return {
@@ -102,22 +106,30 @@ def logging_resume(data: Reader) -> Optional[dict]:
 
 @map_to(EventType.DISARM, event_map)
 def disarm(data: Reader) -> Optional[dict]:
-    return {"reason": _unsigned_vb(data), }
+    return {
+        "reason": _unsigned_vb(data),
+    }
 
 
 @map_to(EventType.GOV_STATE, event_map)
 def gov_state(data: Reader) -> Optional[dict]:
-    return {"gov": _unsigned_vb(data), }
+    return {
+        "gov": _unsigned_vb(data),
+    }
 
 
 @map_to(EventType.RESCUE_STATE, event_map)
 def rescue_state(data: Reader) -> Optional[dict]:
-    return {"rescue": _unsigned_vb(data), }
+    return {
+        "rescue": _unsigned_vb(data),
+    }
 
 
 @map_to(EventType.AIRBORNE_STATE, event_map)
 def airborne_state(data: Reader) -> Optional[dict]:
-    return {"airborne": _unsigned_vb(data), }
+    return {
+        "airborne": _unsigned_vb(data),
+    }
 
 
 @map_to(EventType.CUSTOM_DATA, event_map)
@@ -126,7 +138,9 @@ def custom_data(data: Reader) -> Optional[dict]:
     cust_data = ""
     for _ in range(length):
         cust_data += f"{next(data):02X}"
-    return {"data": cust_data, }
+    return {
+        "data": cust_data,
+    }
 
 
 @map_to(EventType.CUSTOM_STRING, event_map)
@@ -135,7 +149,9 @@ def custom_string(data: Reader) -> Optional[dict]:
     cust_data = ""
     for _ in range(length):
         cust_data += chr(next(data))
-    return {"data": cust_data, }
+    return {
+        "data": cust_data,
+    }
 
 
 @map_to(EventType.LOG_END, event_map)

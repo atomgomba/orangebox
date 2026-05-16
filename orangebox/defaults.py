@@ -33,8 +33,7 @@ class HeaderDefaults:
 
     @classmethod
     def inspect(cls, headers: Headers):
-        """Inspect headers and log a warning on missing values which are expected.
-        """
+        """Inspect headers and log a warning on missing values which are expected."""
         for header in cls.defaults.keys():
             if header not in headers.keys():
                 default = cls.defaults.get(header)

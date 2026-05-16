@@ -20,22 +20,22 @@ from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union
 
 
 class FrameType(Enum):
-    INTER = 'P'
+    INTER = "P"
     """Inter frames hold deltas
     """
-    INTRA = 'I'
+    INTRA = "I"
     """Intra frames are key frames
     """
-    GPS = 'G'
+    GPS = "G"
     """Frames for GPS data
     """
-    SLOW = 'S'
+    SLOW = "S"
     """Slow frames are saved at a lower frequency
     """
-    GPS_HOME = 'H'
+    GPS_HOME = "H"
     """Frame for GPS home position
     """
-    EVENT = 'E'
+    EVENT = "E"
     """Frames for log events
     """
 
@@ -54,14 +54,17 @@ class FieldDef:
     :param predictorfun: Predictor callable (set by `.Reader` dynamically)
     :type predictorfun: Optional[Predictor]
     """
-    def __init__(self,
-                 frame_type: FrameType,
-                 name: Optional[str] = None,
-                 signed: Optional[int] = None,
-                 predictor: Optional[int] = None,
-                 encoding: Optional[int] = None,
-                 decoderfun: Optional["Decoder"] = None,
-                 predictorfun: Optional["Predictor"] = None):
+
+    def __init__(
+        self,
+        frame_type: FrameType,
+        name: Optional[str] = None,
+        signed: Optional[int] = None,
+        predictor: Optional[int] = None,
+        encoding: Optional[int] = None,
+        decoderfun: Optional["Decoder"] = None,
+        predictorfun: Optional["Predictor"] = None,
+    ):
         self.type = frame_type
         self.name = name
         self.signed = signed
@@ -71,8 +74,7 @@ class FieldDef:
         self.predictorfun = predictorfun  # type: Predictor
 
     def __repr__(self):
-        return "<FrameDef type={type} name='{name}' signed={signed} predictor={predictor} encoding={encoding}>".format(
-            **self.__dict__)
+        return "<FrameDef type={type} name='{name}' signed={signed} predictor={predictor} encoding={encoding}>".format(**self.__dict__)
 
 
 class EventType(IntEnum):
@@ -106,7 +108,7 @@ class EventType(IntEnum):
 
 Number = Union[int, float]
 
-Frame = namedtuple('Frame', 'type data')
+Frame = namedtuple("Frame", "type data")
 """
 :param type: Type of frame
 :type type: FrameType
@@ -120,7 +122,7 @@ Decoder = Callable[[Iterator[int], Optional["Context"]], DecodedValue]
 Predictor = Callable[[int, "Context"], int]
 FieldDefs = Dict[FrameType, List[FieldDef]]
 
-Event = namedtuple('Event', 'type data')
+Event = namedtuple("Event", "type data")
 """
 :param type: Type of event
 :type type: EventType
