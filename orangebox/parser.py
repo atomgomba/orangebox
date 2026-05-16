@@ -91,7 +91,7 @@ class Parser:
         field_defs = self._reader.field_defs
         last_slow = None  # type: Optional[Frame]
         last_gps = None  # type: Optional[Frame]
-        ctx = self._ctx  # type: Context
+        ctx = self.__require_ctx
         reader = self._reader
         last_time = None
         last_iter = 0
@@ -203,7 +203,7 @@ class Parser:
 
     def _parse_frame(self, fdefs: List[FieldDef], reader: Reader) -> Frame:
         result = ()
-        ctx = self._ctx
+        ctx = self.__require_ctx
         ctx.field_index = 0
         field_count = ctx.field_def_counts[ctx.frame_type]
         while ctx.field_index < field_count:
@@ -233,7 +233,7 @@ class Parser:
         except ValueError:
             _log.warning("Unknown event type: {!r}".format(byte))
             return False
-        _log.debug("New event frame #{:d}: {:s}".format(self._ctx.read_frame_count + 1, event_type.name))
+        _log.debug("New event frame #{:d}: {:s}".format(self.__require_ctx.read_frame_count + 1, event_type.name))
         parser = event_map[event_type]  # type: EventParser
         event_data = parser(reader)
         self._events.append(Event(event_type, event_data))
@@ -277,7 +277,15 @@ class Parser:
     @property
     def home_coords(self) -> Optional[tuple]:
         """Home coordinates from last GPS_HOME event"""
-        if self._ctx.last_gps_home_frame is not None:
-            data = self._ctx.last_gps_home_frame.data
+        ctx = self.__require_ctx
+        if ctx.last_gps_home_frame is not None:
+            data = ctx.last_gps_home_frame.data
             return data[0], data[1]
         return None
+
+    @property
+    def __require_ctx(self) -> Context:
+        ctx = self._ctx
+        if ctx is None:
+            raise RuntimeError("Parser context was not set")
+        return ctx
