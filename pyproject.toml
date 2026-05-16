@@ -1,0 +1,15 @@
+[project]
+name = "orangebox"
+version = "0.5.0"
+description = "A Cleanflight/Betaflight blackbox log parser written in Python 3"
+readme = "README.md"
+requires-python = ">=3.6"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.0.17",
+]
+
+[tool.ruff]
+lint.ignore = []
+line-length = 160
