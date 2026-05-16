@@ -55,6 +55,14 @@ parser.set_log_index(1)
 
 ## Changelog
 
+### 0.5.0
+
+* *Breaking change:* raise `RuntimeError` on unexpected end of log
+* New features and fixes thanks to [@rtlopez](https://github.com/rtlopez)!
+  * Add support for Inav and Rotorflight events
+  * Handle unexpected end of log
+  * Event parsing bugfix
+
 ### 0.4.0
 
 * Inspect log files for potentially missing required headers

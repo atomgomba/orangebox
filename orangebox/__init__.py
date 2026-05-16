@@ -17,4 +17,4 @@
 from .parser import Parser
 from .errors import InvalidHeaderException
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
