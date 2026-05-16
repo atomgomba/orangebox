@@ -91,6 +91,7 @@ def inflight_adjustment(data: Reader) -> Optional[dict]:
         "value": value,
     }
 
+
 @map_to(EventType.LOGGING_RESUME, event_map)
 def logging_resume(data: Reader) -> Optional[dict]:
     return {
@@ -98,21 +99,26 @@ def logging_resume(data: Reader) -> Optional[dict]:
         "time": _unsigned_vb(data),
     }
 
+
 @map_to(EventType.DISARM, event_map)
 def disarm(data: Reader) -> Optional[dict]:
     return {"reason": _unsigned_vb(data), }
+
 
 @map_to(EventType.GOV_STATE, event_map)
 def gov_state(data: Reader) -> Optional[dict]:
     return {"gov": _unsigned_vb(data), }
 
+
 @map_to(EventType.RESCUE_STATE, event_map)
 def rescue_state(data: Reader) -> Optional[dict]:
     return {"rescue": _unsigned_vb(data), }
 
+
 @map_to(EventType.AIRBORNE_STATE, event_map)
 def airborne_state(data: Reader) -> Optional[dict]:
     return {"airborne": _unsigned_vb(data), }
+
 
 @map_to(EventType.CUSTOM_DATA, event_map)
 def custom_data(data: Reader) -> Optional[dict]:
@@ -122,6 +128,7 @@ def custom_data(data: Reader) -> Optional[dict]:
         cust_data += f"{next(data):02X}"
     return {"data": cust_data, }
 
+
 @map_to(EventType.CUSTOM_STRING, event_map)
 def custom_string(data: Reader) -> Optional[dict]:
     length = next(data)
@@ -129,6 +136,7 @@ def custom_string(data: Reader) -> Optional[dict]:
     for _ in range(length):
         cust_data += chr(next(data))
     return {"data": cust_data, }
+
 
 @map_to(EventType.LOG_END, event_map)
 def logging_end(data: Reader) -> Optional[dict]:
