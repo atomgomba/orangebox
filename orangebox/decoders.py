@@ -26,6 +26,7 @@ decoder_map = dict()  # type: Dict[int, Decoder]
 @map_to(0, decoder_map)
 def _signed_vb(data: Iterator[int], ctx: Optional[Context] = None) -> DecodedValue:
     value = _unsigned_vb(data, ctx)
+    assert isinstance(value, int)
     value = ((value % 0x100000000) >> 1) ^ -(value & 1)
     return value
 
@@ -52,6 +53,7 @@ def _neg_14bit(data: Iterator[int], ctx: Optional[Context] = None) -> DecodedVal
 
 @map_to(6, decoder_map)
 def _tag8_8svb(data: Iterator[int], ctx: Optional[Context] = None) -> DecodedValue:
+    assert ctx is not None
     # count adjacent fields with same encoding
     group_count = 8
     fdeflen = ctx.field_def_counts[ctx.frame_type]

@@ -89,7 +89,7 @@ class Parser:
         last_gps = None  # type: Optional[Frame]
         ctx = self.__require_ctx
         reader = self._reader
-        last_time = None
+        last_time = None  # type: Optional[int]
         last_iter = 0
         last_frame_pos = 0
         last_frame_is_corrupt = False
@@ -148,7 +148,7 @@ class Parser:
                 continue
 
             # validate frame
-            current_time = ctx.get_current_value_by_name(ftype, "time")
+            current_time = int(ctx.get_current_value_by_name(ftype, "time"))
             if last_time is not None and last_time >= current_time and MAX_TIME_JUMP < current_time - last_time:
                 _log.debug("Invalid {:s} Frame #{:d} due to time desync ({:d}, {:d})".format(ftype.value, ctx.read_frame_count + 1, last_time, current_time))
                 last_time = current_time

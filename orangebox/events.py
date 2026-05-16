@@ -82,11 +82,14 @@ def imu_failure(data: Reader) -> Optional[dict]:
 @map_to(EventType.INFLIGHT_ADJUSTMENT, event_map)
 def inflight_adjustment(data: Reader) -> Optional[dict]:
     func = next(data)
+    assert func is not None
     value = 0
     if func & 0x80:
         # read float32
         for i in range(4):
-            value |= next(data) << (i * 8)
+            next_value = next(data)
+            assert next_value is not None
+            value |= next_value << (i * 8)
         value = struct.unpack("<f", value.to_bytes(4, "little"))[0]
     else:
         value = _signed_vb(data)
